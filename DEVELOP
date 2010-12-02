@@ -1,0 +1,30 @@
+Developing using libdaap
+
+Call libdaap.make_daap_server() with the backend as the argument (more on this
+later).  This returns a server instance.
+
+Call libdaap.runloop() with the server as the argument.
+
+You may also consider to use Bonjour sharing, you can turn this on and
+off with libdaap.install_mdns() with a sharename as an argument.  This
+function returns a reference which you can destroy with 
+libdaap.uninstall_mdns().
+
+There are more arguments to these functions to change the port settings
+among others, refer to the source code for help.
+
+Notes on backend:
+
+The backend is basically a object-based class that can get item information
+from whatever backing store is used.
+
+You must implement two functions:
+
+get_items(): This gets a listing of the items in "native" format that
+the server frontend expects.  In the case of libdaap, this is a
+dictionary indexed by a numeric identifier (which must be > 0), and
+tuples of daap/dmap codes and their corresponding values.
+
+get_filepath(itemid): Get the full path to the file for the itemid.
+
+
