@@ -62,7 +62,7 @@ class Backend(object):
     def get_playlists(self):
         return []
 
-    def get_items(self):
+    def get_items(self, playlist_id=None):
         return self.items
 
     def get_filepath(self, itemid):

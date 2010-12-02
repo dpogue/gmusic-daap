@@ -320,7 +320,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                                 ('mimc', count),# Total count
                                 # Playlist is always non-zero because of
                                 # default playlist.
-                                ('mctc', npl)   # XXX Playlist count
+                                ('mctc', npl)   # Playlist count
                                ]))
             reply.append(('avdb', [
                                    ('mstt', DAAP_OK),   # OK
@@ -357,7 +357,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if len(path) == 3:
             # There is a requirement to send a default playlist so we
             # try to always send that one.
-            count = len(self.server.backend.get_items())
             default_playlist = [('mlit', [
                                           ('miid', 1),     # Item id
                                           ('minm', 'Library'),
@@ -379,8 +378,8 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                         ))
         else:
             # len(path) > 3
-            playlistid = int(path[3])
-            return self.do_itemlist(path, query, playlistid)
+            playlist_id = int(path[3])
+            return self.do_itemlist(path, query, playlist_id=playlist_id)
         return (DAAP_OK, reply, [])
 
     def do_database_browse(self, path, query):
@@ -397,8 +396,8 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # type=xxx - not parsed yet.
     # transcoding - nupe, no support yet.
     # try to invoke any of this the server will go BOH BOH!!!! no support!!!
-    def do_itemlist(self, path, query, playlist):
-        items = self.server.backend.get_items()
+    def do_itemlist(self, path, query, playlist_id=None):
+        items = self.server.backend.get_items(playlist_id=playlist_id)
         nfiles = len(items)
         itemlist = []
 
@@ -431,7 +430,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return (DAAP_FORBIDDEN, [], [])
         if len(path) == 3:
             # ^/database/id/items$
-            return self.do_itemlist(path, query, None)
+            return self.do_itemlist(path, query)
         if len(path) == 4:
             # Use atoi() here if only because Rhythmbox always pass us
             # junk at the end.
