@@ -412,7 +412,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                                      ] + item
                            )) 
  
-        tag = 'apso' if playlist else 'adbs'
+        tag = 'apso' if playlist_id else 'adbs'
         reply = []
         reply = [(tag, [                     # Container type
                         ('mstt', DAAP_OK),   # Status: OK
