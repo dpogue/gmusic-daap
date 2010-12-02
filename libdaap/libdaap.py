@@ -357,6 +357,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if len(path) == 3:
             # There is a requirement to send a default playlist so we
             # try to always send that one.
+            count = len(self.server.backend.get_items())
             default_playlist = [('mlit', [
                                           ('miid', 1),     # Item id
                                           ('minm', 'Library'),
