@@ -354,24 +354,26 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return (DAAP_FORBIDDEN, [], [])
         reply = []
         if len(path) == 3:
-            # We don't really support this at the moment, save for 
-            # the requirement to send a default playlist.
+            # There is a requirement to send a default playlist so we
+            # try to always send that one.
             count = len(self.server.backend.get_items())
             default_playlist = [('mlit', [
                                           ('miid', 1),     # Item id
                                           ('minm', 'Library'),
                                           ('mper', 1),     # Persistent id
-                                          ('mimc', count), # count - XXX dodgy
-                                          ('mpco', 0),     # container ID
+                                          ('mimc', count), # count
+                                          ('mpco', 0),     # parent container ID
                                           ('abpl', 1)      # Base playlist 
                                          ]
                                )]
+            playlists = self.server.backend.get_playlists()
+            npl = 1 + len(playlists)
             reply.append(('aply', [                   # Database playlists
                                    ('mstt', DAAP_OK), # Status - OK
                                    ('muty', 0),       # Update type
-                                   ('mtco', 1),       # total count - XXX fake!
-                                   ('mrco', 1),       # returned count - XXX?
-                                   ('mlcl', default_playlist)
+                                   ('mtco', npl),     # total count
+                                   ('mrco', npl),     # returned count
+                                   ('mlcl', default_playlist + playlists)
                                   ]
                         ))
         else:

@@ -59,6 +59,9 @@ class Backend(object):
                 self.items[c] = [('minm', nam), ('asfm', ext)]
                 self.itempaths[c] = path
 
+    def get_playlists(self):
+        return []
+
     def get_items(self):
         return self.items
 
