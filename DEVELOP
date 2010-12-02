@@ -23,7 +23,16 @@ You must implement two functions:
 get_items(): This gets a listing of the items in "native" format that
 the server frontend expects.  In the case of libdaap, this is a
 dictionary indexed by a numeric identifier (which must be > 0), and
-tuples of daap/dmap codes and their corresponding values.
+tuples of daap/dmap codes and their corresponding values.  If you implement
+playlist support you must also implement the playlist_id argument which only
+returns items for a particular playlist.
+
+get_playlists(): This can be stubbed out to return an empty list: [].  If
+you don't then you must return the playlists in native libdaap format which
+is a list of (mlit, [...]) listing of playlist items.  Refer to the libdaap
+source code for the default 'Library' playlist on how to build one.  If you
+implement this you must also implement the optional playlist_id argument
+in get_items().
 
 get_filepath(itemid): Get the full path to the file for the itemid.
 
