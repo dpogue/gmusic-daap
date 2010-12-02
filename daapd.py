@@ -39,7 +39,7 @@ import getopt
 
 # Hardcoded example backend
 import filebackend
-from pydaap.libdaap import *
+from libdaap import *
 
 VERSION = '0.1'
 

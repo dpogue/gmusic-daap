@@ -40,7 +40,7 @@ import getopt
 # XXX http.client in Python 3
 import httplib
 
-from pydaap.libdaap import *
+from libdaap import *
 from subr import decode_response
 import mdns
 
