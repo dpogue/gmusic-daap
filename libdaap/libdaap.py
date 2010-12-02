@@ -312,6 +312,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             db = []
             count = len(self.server.backend.get_items())
             name = self.server.name
+            npl = 1 + len(self.server.backend.get_playlists())
             db.append(('mlit', [
                                 ('miid', 1),    # Item ID
                                 ('mper', 1),    # Persistent ID
@@ -319,7 +320,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                                 ('mimc', count),# Total count
                                 # Playlist is always non-zero because of
                                 # default playlist.
-                                ('mctc', 1)     # XXX Playlist count
+                                ('mctc', npl)   # XXX Playlist count
                                ]))
             reply.append(('avdb', [
                                    ('mstt', DAAP_OK),   # OK
@@ -409,8 +410,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             itemlist.append(('mlit', [       # Listing item
                                       # item kind - seems OK to hardcode this.
                                       ('mikd', DAAP_ITEMKIND_AUDIO),
-                                      # item id - XXX fixme
-                                      ('miid', k)
                                      ] + item
                            )) 
  
