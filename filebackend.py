@@ -1,5 +1,3 @@
-# filebackend.py
-#
 # Miro - an RSS based video player application
 # Copyright (C) 2010 Participatory Culture Foundation
 #
@@ -28,6 +26,8 @@
 # this exception statement from your version. If you delete this exception
 # statement from all source files in the program, then also delete it here.
 
+# filebackend.py
+#
 #
 # Dumb file backend.
 #
