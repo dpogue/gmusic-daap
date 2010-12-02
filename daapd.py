@@ -79,9 +79,9 @@ def main(argc, argv):
         if len(args) != 1:
             usage(prognam)
 
-        # XXX hardcoded module for ready-to-eat server.
         if use_mdns:
             install_mdns('pydaap', **kwargs)
+        # XXX hardcoded module for ready-to-eat server.
         backend = filebackend.Backend(args[0])
         server = make_daap_server(backend, **kwargs)
         runloop(server)
