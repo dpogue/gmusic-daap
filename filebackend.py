@@ -56,7 +56,7 @@ class Backend(object):
             path = os.path.join(self.path, entry)
             if (os.path.isfile(os.path.join(self.path, entry)) and
               ext in self.ext):
-                self.items[c] = [('minm', nam), ('asfm', ext)]
+                self.items[c] = [('miid', c), ('minm', nam), ('asfm', ext)]
                 self.itempaths[c] = path
 
     def get_playlists(self):
