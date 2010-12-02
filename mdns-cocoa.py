@@ -29,6 +29,8 @@
 # mdns.py
 #
 # Very simple implementation of publishing service on Mac using mDNSResponder.
+# 
+# NOTE: THIS FILE IS CURRENTLY NOT MAINTAINED AND IS UNUSED.
 
 from Foundation import NSNetService, NSNetServiceBrowser, NSObject
 

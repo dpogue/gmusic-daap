@@ -28,7 +28,7 @@
 
 
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 # Note: this setup installs the libraries only, but you can run the reference
 # client or server in-place.
@@ -53,5 +53,5 @@ setup(
         'Topic :: System :: Distributed Computing',
         'Topic :: System :: Networking',
         ],
-    py_modules = ['const', 'libdaap', 'subr', 'mdns'],
+    packages = find_packages()
     )
