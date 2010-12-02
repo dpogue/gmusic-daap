@@ -398,7 +398,14 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # transcoding - nupe, no support yet.
     # try to invoke any of this the server will go BOH BOH!!!! no support!!!
     def do_itemlist(self, path, query, playlist_id=None):
-        items = self.server.backend.get_items(playlist_id=playlist_id)
+        # Library playlist?
+        # Save this variable, we use it to determine which code to send later
+        # on.  playlist_id is Library default so it if asks for that as a 
+        # container (playlist) we still want to send the playlist version.
+        backend_id = playlist_id
+        if backend_id == 1:
+            backend_id = None
+        items = self.server.backend.get_items(playlist_id=backend_id)
         nfiles = len(items)
         itemlist = []
 
