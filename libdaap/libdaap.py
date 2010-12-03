@@ -363,7 +363,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                                           ('minm', 'Library'),
                                           ('mper', 1),     # Persistent id
                                           ('mimc', count), # count
-                                          ('mpco', 0),     # parent container ID
+                                          ('mpco', 0),     # parent containerid
                                           ('abpl', 1)      # Base playlist 
                                          ]
                                )]
@@ -394,7 +394,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # sort-headers - seems to be like asking the server to sort something
     # metadata - no support for this at the moment either.  Pretend we don't
     #            have any!!
-    # type=xxx - not parsed yet.
+    # type=xxx - not parsed yet.  I don't think it's actually used (?)
     # transcoding - nupe, no support yet.
     # try to invoke any of this the server will go BOH BOH!!!! no support!!!
     def do_itemlist(self, path, query, playlist_id=None):
@@ -466,6 +466,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # in urlparse (doesn't support daap but it's basically the same
         # as http).
         endconn = False
+        print 'CONN FROM ', self.client_address
         try:
             # You can do virtual host with this but we don't support for now
             # and actually strip it out.
@@ -531,6 +532,8 @@ def uninstall_mdns(ref):
 def runloop(daapserver):
     daapserver.serve_forever()
 
+# Note: We can try port 3689 and then fallback to a random port, 
+# except in case where the user hardcodes a port to use.
 def make_daap_server(backend, name='pydaap', port=DEFAULT_PORT,
                      max_conn=DAAP_MAXCONN):
     handler = DaapHttpRequestHandler
