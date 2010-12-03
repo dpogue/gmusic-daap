@@ -529,6 +529,12 @@ def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
 def uninstall_mdns(ref):
     mdns.bonjour_unregister_service(ref)
 
+# NOTE: This is a runloop and doesn't return.  Don't run it from a place
+# where code execution must continue.
+def browse_mdns(callback):
+    mdns.bonjour_browse_service('_daap._tcp', callback)
+    # NOTREACHED
+
 def runloop(daapserver):
     daapserver.serve_forever()
 

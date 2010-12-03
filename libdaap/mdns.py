@@ -52,3 +52,51 @@ def bonjour_register_service(name, regtype, port, callback):
     pybonjour.DNSServiceProcessResult(ref)
     return ref
 
+# Use a Python class so we can stash our state inside it.
+class BonjourBrowseCallbacks(object):
+
+    def __init__(self, callback):
+        self.user_callback = callback
+
+    def resolve_callback(self, sdRef, flags, interfaceIndex, errorCode,
+                         fullname, hosttarget, port, txtRecord):
+        if errorCode != pybonjour.kDNSServiceErr_NoError:
+            return
+
+        if self.user_callback:
+            self.user_callback(self.added, fullname, hosttarget, port)
+        else:
+            print 'resolve_callback: '
+            print 'added: %s' % self.added
+            print 'name: %s' % fullname
+            print 'host: %s' % hosttarget
+            print 'port: %s' % port
+
+    def browse_callback(self, sdRef, flags, interfaceIndex, errorCode,
+                        serviceName, regtype, replyDomain):
+        if errorCode != pybonjour.kDNSServiceErr_NoError:
+            return
+
+        if (flags & pybonjour.kDNSServiceFlagsAdd):
+            self.added = True
+        else:
+            self.added = False
+
+        resolve_ref = pybonjour.DNSServiceResolve(0,
+                                                  interfaceIndex,
+                                                  serviceName,
+                                                  regtype,
+                                                  replyDomain,
+                                                  self.resolve_callback)
+        pybonjour.DNSServiceProcessResult(resolve_ref)
+        resolve_ref.close()
+
+# XXX This API is not very good because there is no way to cancel it.
+def bonjour_browse_service(regtype, callback):
+    callback_object = BonjourBrowseCallbacks(callback)
+    ref = pybonjour.DNSServiceBrowse(regtype=regtype,
+                                     callBack=callback_object.browse_callback)
+    # XXX Setup select() and wait here?  Or maybe make async somehow?
+    while True:
+        pybonjour.DNSServiceProcessResult(ref)
+
