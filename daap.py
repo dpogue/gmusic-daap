@@ -41,8 +41,8 @@ import getopt
 import httplib
 
 from libdaap import *
-from subr import decode_response
-import mdns
+from libdaap import decode_response
+#import mdns
 
 VERSION = '0.1'
 
@@ -62,6 +62,7 @@ def scanmdns():
 
 def handleresponse(response):
     print 'HTTP status %d %s' % (response.status, response.reason)
+    print response.getheaders()
     if response.status == httplib.OK:
         return response.read()
     if response.status >= httplib.BAD_REQUEST:
