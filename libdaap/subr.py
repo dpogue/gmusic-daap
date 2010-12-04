@@ -152,6 +152,27 @@ def atox(s, func, base=10):
             break
     return res
 
+def find_daap_tag(searchtag, data):
+    """find_daap_tag(searchtag, data) -> value
+
+    Given a daap tag and a decoded response, find the value associated with
+    that tag.  If there are multiple only first one is returned.
+
+    NB: This function uses recursion and MAY fail if your decoded data nests
+    many levels (though this should never be the case).
+    """
+    try:
+        for tag, value in data:
+            if searchtag == tag:
+                return value
+            if type(value) == list:
+                value = find_daap_tag(searchtag, value)
+                if value:
+                    return value
+    # Recursion error is RuntimeError, treat it as failure.
+    except (RuntimeError, ValueError):
+        return None
+
 def decode_response(reply):
     """
        decode_response(reply) -> reply

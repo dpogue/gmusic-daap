@@ -27,7 +27,7 @@
 # statement from all source files in the program, then also delete it here.
 
 # libdaap.py
-# Server implementation of DAAP
+# Server/Client implementation of DAAP
 
 import os
 # XXX merged into urllib.urlparse in Python 3
@@ -36,11 +36,12 @@ import urlparse
 import BaseHTTPServer
 import SocketServer
 import threading
+import httplib
 
 import mdns
 from const import *
-from subr import (encode_response, split_url_path, atoi, atol, StreamObj,
-                  ChunkedStreamObj)
+from subr import (encode_response, decode_response, split_url_path, atoi,
+                  atol, StreamObj, ChunkedStreamObj, find_daap_tag)
 
 # Configurable options (or do via command line).
 DEFAULT_PORT = 3689
@@ -549,9 +550,11 @@ def browse_mdns(callback):
                fullname = fullname[:fullname.rindex('._daap._tcp')]
            except IndexError:
                pass
-           self.user_callback(added, fullname, hosttarget, port)
+           if self.user_callback:
+               self.user_callback(added, fullname, hosttarget, port)
     callback_class = BrowseCallback(callback)
-    mdns.bonjour_browse_service('_daap._tcp', callback_class.mdns_callback)
+    mdns_callback = callback_class.mdns_callback if callback else None
+    mdns.bonjour_browse_service('_daap._tcp', mdns_callback)
     # NOTREACHED
 
 def runloop(daapserver):
@@ -569,3 +572,81 @@ def make_daap_server(backend, name='pydaap', port=DEFAULT_PORT,
     return httpd
 
 ###############################################################################
+
+# DaapClient class
+# TODO Should check daap status codes - but it's duplicated in the http
+# response as well, so it's not very urgent.
+class DaapClient(object):
+    HEARTBEAT = 60    # seconds
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+
+    def heartbeat_callback(self):
+        try:
+            self.conn.request('GET', '/activity?session-id=%s', self.session)
+            self.check_reply(self.getresponse(), httplib.NO_CONTENT)
+            # Re-arm the timer
+            self.timer = threading.Timer(self.HEARTBEAT,
+                                         self.heartbeat_callback,
+                                         self.session)
+        # We've been disconnected?
+        except IOError:
+            pass
+
+    # Generic check for http response.  ValueError() on unexpected response.
+    def check_reply(self, response, http_code=httplib.OK, callback=None):
+        if response.status != http_code:
+            raise ValueError('Unexpected response code %d' % http_code)
+        # XXX Broken - don't do an unbounded read here, this is stupid,
+        # server can crash the client
+        data = response.read()
+        if callback:
+            callback(data)
+
+    def handle_login(self, data):
+        self.session = find_daap_tag('mlid', decode_response(data))
+
+    def connect(self):
+        try:
+            self.conn = httplib.HTTPConnection(self.host, self.port)
+            self.conn.request('GET', '/server-info')
+            self.check_reply(self.conn.getresponse())            
+            self.conn.request('GET', '/content-codes')
+            self.check_reply(self.conn.getresponse())
+            self.conn.request('GET', '/login')
+            self.check_reply(self.conn.getresponse(),
+                             callback=self.handle_login)
+            self.timer = threading.Timer(self.HEARTBEAT,
+                                         self.heartbeat_callback,
+                                         self.session)
+            return True
+        # We've been disconnected?
+        except (IOError, ValueError):
+            return False
+
+    # This actually returns the items in the playlists.  Base 'Library'
+    # playlist returns everything.
+    def get_items(self):
+        pass
+
+    def disconnect(self):
+        try:
+            # We can be more polite and issue '/logout' but it's not necessary
+            self.conn.close()
+        # Don't care since we are going away anyway.
+        except IOError:
+            pass
+
+    def daap_get_file_request(file_id):
+        """daap_file_get_url(file_id) -> url
+        Helper function to convert from a file id to a http request that we can
+        use to download stuff.
+
+        It's useful to remember that daap is just http, so you can use any http
+        client you like here.
+        """
+        pass   
+
+def make_daap_client(host, port=DEFAULT_PORT):
+    return DaapClient(host, port)

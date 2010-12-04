@@ -28,4 +28,3 @@
 
 from libdaap import *
 from const import *
-from subr import *
