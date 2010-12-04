@@ -586,7 +586,7 @@ class DaapClient(object):
         try:
             self.conn.request('GET', '/activity?session-id=%s', self.session)
             self.check_reply(self.getresponse(), httplib.NO_CONTENT)
-            # Re-arm the timer
+            # If it works, Re-arm the timer
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,
                                          self.session)
@@ -607,6 +607,21 @@ class DaapClient(object):
     def handle_login(self, data):
         self.session = find_daap_tag('mlid', decode_response(data))
 
+    # Note: in theory there could be multiple DB but in reality there's only
+    # one.  So this takes a shortcut.
+    def handle_db(self, data):
+        db_list = find_daap_tag('mlcl', decode_response(data))
+        # Just get the first one.
+        db = find_daap_tag('mlit', db_list)
+        self.db_id = find_daap_tag('miid', db)
+        self.db_name = find_daap_tag('minm', db)
+
+    def sessionize(self, request, query):
+        new_request = request + '?session-id=%d' % self.session
+        # XXX urllib.quote?
+        new_request += '&'.join([name + '=' + param for name, param in query])
+        return new_request
+
     def connect(self):
         try:
             self.conn = httplib.HTTPConnection(self.host, self.port)
@@ -617,12 +632,17 @@ class DaapClient(object):
             self.conn.request('GET', '/login')
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_login)
+            self.conn.request('GET', self.sessionize('/databases', []))
+            self.check_reply(self.conn.getresponse(),
+                             callback=self.handle_db)
+            # Finally, if this all works, start the heartbeat timer.
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,
                                          self.session)
             return True
-        # We've been disconnected?
+        # We've been disconnected or there was a problem?
         except (IOError, ValueError):
+            self.disconnect()
             return False
 
     # This actually returns the items in the playlists.  Base 'Library'
@@ -632,6 +652,7 @@ class DaapClient(object):
 
     def disconnect(self):
         try:
+            self.timer.cancel()
             # We can be more polite and issue '/logout' but it's not necessary
             self.conn.close()
         # Don't care since we are going away anyway.

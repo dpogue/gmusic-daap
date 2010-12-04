@@ -74,9 +74,11 @@ def find_base_playlist(response):
 def playinorder(host, save_dir, kwargs):
     client = libdaap.make_daap_client(host, **kwargs)
     if not client.connect():
-        print 'Error: can't connect'
+        print "Error: can't connect"
         return
     print client.session
+    print client.db_id
+    print client.db_name
     """
     conn = httplib.HTTPConnection(host, **kwargs)
     print 'playinorder: /server-info'
