@@ -71,7 +71,7 @@ def find_db(response):
 def find_base_playlist(response):
     pass
 
-def dump(host, save_dir, kwargs):
+def dump(host, kwargs):
     client = libdaap.make_daap_client(host, **kwargs)
     if not client.connect():
         print "Error: can't connect"
@@ -111,16 +111,15 @@ def main(argc, argv):
                 scanmdns()
                 # NOTREACHED
 
-        if len(args) != 2:
+        if len(args) != 1:
             usage(prognam)
 
         host, sep, port = args[0].partition(':')
-        save_dir = args[1]
         
         if port:
             kwargs['port'] = int(port)
 
-        dump(host, save_dir, kwargs)
+        dump(host, kwargs)
 
     except Exception, e:
         print 'An error occurred: ' + str(e)
