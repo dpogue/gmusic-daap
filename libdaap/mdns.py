@@ -68,8 +68,8 @@ class BonjourBrowseCallbacks(object):
         else:
             print 'resolve_callback: '
             print 'added: %s' % self.added
-            print 'name: %s' % fullname
-            print 'host: %s' % hosttarget
+            print 'name: %s' % fullname.encode('utf-8')
+            print 'host: %s' % hosttarget.encode('utf-8')
             print 'port: %s' % port
 
     def browse_callback(self, sdRef, flags, interfaceIndex, errorCode,
