@@ -76,9 +76,14 @@ def playinorder(host, save_dir, kwargs):
     if not client.connect():
         print "Error: can't connect"
         return
-    print client.session
-    print client.db_id
-    print client.db_name
+    print 'session = ', client.session
+    print 'db = ', client.db_id
+    print 'dbname = ', client.db_name
+    for k in client.playlist.keys():
+        print 'playlist name = %s' % client.playlist[k]['name']
+        print 'playlist count = %s' % client.playlist[k]['count']
+        print 'base playlist = %s' % client.playlist[k]['base']
+
     """
     conn = httplib.HTTPConnection(host, **kwargs)
     print 'playinorder: /server-info'

@@ -41,7 +41,8 @@ import httplib
 import mdns
 from const import *
 from subr import (encode_response, decode_response, split_url_path, atoi,
-                  atol, StreamObj, ChunkedStreamObj, find_daap_tag)
+                  atol, StreamObj, ChunkedStreamObj, find_daap_tag,
+                  find_daap_listitems)
 
 # Configurable options (or do via command line).
 DEFAULT_PORT = 3689
@@ -616,6 +617,23 @@ class DaapClient(object):
         self.db_id = find_daap_tag('miid', db)
         self.db_name = find_daap_tag('minm', db)
 
+    def handle_playlist(self, data):
+        listing = find_daap_tag('mlcl', decode_response(data))
+        playlist_dict = dict()
+        for item in find_daap_listitems(listing):
+            # We only try to pick out a few salient tags for now, there could
+            # be more but we're not going to bother.
+            playlist_id = find_daap_tag('miid', item)
+            playlist_name = find_daap_tag('minm', item)
+            playlist_base = True if find_daap_tag('abpl', item) else False
+            playlist_count = find_daap_tag('mimc', item)
+            playlist_dict[playlist_id] = dict()
+            playlist_dict[playlist_id]['id'] = playlist_id
+            playlist_dict[playlist_id]['name'] = playlist_name
+            playlist_dict[playlist_id]['count'] = playlist_count
+            playlist_dict[playlist_id]['base'] = playlist_base
+        self.playlist = playlist_dict
+
     def sessionize(self, request, query):
         new_request = request + '?session-id=%d' % self.session
         # XXX urllib.quote?
@@ -635,6 +653,10 @@ class DaapClient(object):
             self.conn.request('GET', self.sessionize('/databases', []))
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_db)
+            self.conn.request('GET', self.sessionize(
+                              '/databases/%d/containers' % self.db_id, []))
+            self.check_reply(self.conn.getresponse(),
+                             callback=self.handle_playlist)
             # Finally, if this all works, start the heartbeat timer.
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,

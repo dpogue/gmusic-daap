@@ -152,6 +152,18 @@ def atox(s, func, base=10):
             break
     return res
 
+def find_daap_listitems(listing):
+    """find_daap_listitems(listing) -> items"""
+    values = []
+    try:
+        for tag, value in listing:
+           if not tag == 'mlit':
+               raise ValueError('Expected list item but none encountered')
+           values.append(value)
+        return values
+    except ValueError:
+        return []
+
 def find_daap_tag(searchtag, data):
     """find_daap_tag(searchtag, data) -> value
 
