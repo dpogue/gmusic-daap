@@ -586,7 +586,7 @@ class DaapClient(object):
 
     def heartbeat_callback(self):
         try:
-            self.conn.request('GET', '/activity?session-id=%s', self.session)
+            self.conn.request('GET', self.sessionize('/activity', []))
             self.check_reply(self.getresponse(), httplib.NO_CONTENT)
             # If it works, Re-arm the timer
             self.timer = threading.Timer(self.HEARTBEAT,
