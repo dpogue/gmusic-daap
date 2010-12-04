@@ -582,6 +582,7 @@ class DaapClient(object):
     def __init__(self, host, port):
         self.host = host
         self.port = port
+        self.items = dict()
 
     def heartbeat_callback(self):
         try:
@@ -596,14 +597,15 @@ class DaapClient(object):
             pass
 
     # Generic check for http response.  ValueError() on unexpected response.
-    def check_reply(self, response, http_code=httplib.OK, callback=None):
+    def check_reply(self, response, http_code=httplib.OK, callback=None,
+                    args=[]):
         if response.status != http_code:
             raise ValueError('Unexpected response code %d' % http_code)
         # XXX Broken - don't do an unbounded read here, this is stupid,
         # server can crash the client
         data = response.read()
         if callback:
-            callback(data)
+            callback(data, *args)
 
     def handle_login(self, data):
         self.session = find_daap_tag('mlid', decode_response(data))
@@ -632,7 +634,29 @@ class DaapClient(object):
             playlist_dict[playlist_id]['name'] = playlist_name
             playlist_dict[playlist_id]['count'] = playlist_count
             playlist_dict[playlist_id]['base'] = playlist_base
-        self.playlist = playlist_dict
+        self.playlists = playlist_dict
+
+    def handle_items(self, data, playlist_id):
+        listing = find_daap_tag('mlcl', decode_response(data))
+        itemdict = dict()
+        if not listing:
+            self.items[playlist_id] = dict()    # dummy empty
+            return
+        for item in find_daap_listitems(listing):
+            # Pick out the tags which we care about (for now).
+            itemkind = find_daap_tag('mikd', item)
+            itemid = find_daap_tag('miid', item)
+            itemname = find_daap_tag('minm', item)
+            itemduration = find_daap_tag('astm', item)
+            itemsize = find_daap_tag('assz', item)
+            itemenclosure = find_daap_tag('asfm', item)
+            itemdict[itemid] = dict()
+            itemdict[itemid]['id'] = itemid
+            itemdict[itemid]['kind'] = itemkind
+            itemdict[itemid]['name'] = itemname
+            itemdict[itemid]['duration'] = itemduration
+            itemdict[itemid]['size'] = itemsize
+        self.items[playlist_id] = itemdict
 
     def sessionize(self, request, query):
         new_request = request + '?session-id=%d' % self.session
@@ -657,6 +681,13 @@ class DaapClient(object):
                               '/databases/%d/containers' % self.db_id, []))
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_playlist)
+            for k in self.playlists.keys():
+                self.conn.request('GET', self.sessionize(
+                    '/databases/%d/containers/%d/items' % (self.db_id, k),
+                    []))
+                self.check_reply(self.conn.getresponse(),
+                                 callback=self.handle_items,
+                                 args=[k])
             # Finally, if this all works, start the heartbeat timer.
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,
@@ -678,7 +709,7 @@ class DaapClient(object):
             # We can be more polite and issue '/logout' but it's not necessary
             self.conn.close()
         # Don't care since we are going away anyway.
-        except IOError:
+        except (AttributeError, IOError):
             pass
 
     def daap_get_file_request(file_id):

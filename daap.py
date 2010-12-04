@@ -79,11 +79,15 @@ def dump(host, save_dir, kwargs):
     print 'session = ', client.session
     print 'db = ', client.db_id
     print 'dbname = ', client.db_name
-    for k in client.playlist.keys():
-        print 'playlist name = %s' % client.playlist[k]['name']
-        print 'playlist count = %s' % client.playlist[k]['count']
-        print 'base playlist = %s' % client.playlist[k]['base']
-
+    for k in client.playlists.keys():
+        print 'playlist name = %s' % client.playlists[k]['name']
+        print 'playlist count = %s' % client.playlists[k]['count']
+        print 'base playlist = %s' % client.playlists[k]['base']
+        for k_ in client.items[k].keys():
+            print '    media kind = %s' % client.items[k][k_]['kind']
+            print '    media name = %s' % client.items[k][k_]['name']
+            print '    media duration = %s' % client.items[k][k_]['duration']
+            print '    media size = %s' % client.items[k][k_]['size']
 
 def main(argc, argv):
     prognam = argv[0]
