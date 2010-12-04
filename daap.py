@@ -63,18 +63,6 @@ def scanmdns():
     finally:
         sys.exit(1)
 
-def handleresponse(response):
-    print 'HTTP status %d %s' % (response.status, response.reason)
-    print response.getheaders()
-    if response.status == httplib.OK:
-        return response.read()
-    if response.status >= httplib.BAD_REQUEST:
-        print 'Error: boh boh...'
-        return None
-    else:
-        print 'Unsupported http response'
-        return None
-
 def find_db(response):
     print 'find_db:'
     print 'response: ', response
@@ -85,7 +73,9 @@ def find_base_playlist(response):
 
 def playinorder(host, save_dir, kwargs):
     client = libdaap.make_daap_client(host, **kwargs)
-    client.connect()
+    if not client.connect():
+        print 'Error: can't connect'
+        return
     print client.session
     """
     conn = httplib.HTTPConnection(host, **kwargs)
