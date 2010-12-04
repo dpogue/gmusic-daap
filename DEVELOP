@@ -18,7 +18,7 @@ Notes on backend:
 The backend is basically a object-based class that can get item information
 from whatever backing store is used.
 
-You must implement two functions:
+You must implement these functions:
 
 get_items(): This gets a listing of the items in "native" format that
 the server frontend expects.  In the case of libdaap, this is a
@@ -36,4 +36,16 @@ in get_items().
 
 get_filepath(itemid): Get the full path to the file for the itemid.
 
+For client, call libdaap.make_daap_client(host, port=xxx) to make a
+client object.  The port=xxx is optional defaults to the default daap port.
+
+Call the connect() method to connect to a share, disconnect() to disconnect,
+and daap_get_file_request(file_id) to return a path you can request via
+http (recall daap is http-based).
+
+Call libdaap.browse_mdns(callback) to browse for daap shares and have it
+notify you via the callback when things are published or removed.
+Callback has signature:
+
+callback(added, fullname, hosttarget, port)
 
