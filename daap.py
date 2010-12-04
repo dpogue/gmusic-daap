@@ -44,8 +44,6 @@ import libdaap
 
 VERSION = '0.1'
 
-MDNS_SERVICENAME = '_daap._tcp'
-
 def usage(prognam):
     print 'usage: %s [-Svh] [addr:port]' % prognam
     sys.exit(1)
