@@ -532,7 +532,26 @@ def uninstall_mdns(ref):
 # NOTE: This is a runloop and doesn't return.  Don't run it from a place
 # where code execution must continue.
 def browse_mdns(callback):
-    mdns.bonjour_browse_service('_daap._tcp', callback)
+    # This class allows us to make a callback and then do some post-processing
+    # before we really pass the stuff back to the user.  We need it because
+    # we need some place to stash the user callback.  Our aim isn't to return
+    # exactly what's returned by the mDNSResponder API but to return what's
+    # useful to us, and that means some text processing.
+    class BrowseCallback(object):
+       def __init__(self, callback):
+           self.user_callback = callback
+       def mdns_callback(self, added, fullname, hosttarget, port):
+           # XXX not exactly sure why it does this, but we strip away the
+           # dead character.
+           fullname = fullname.replace('\\032', ' ')
+           # Strip away the '_daap._tcp...'
+           try:
+               fullname = fullname[:fullname.rindex('._daap._tcp')]
+           except IndexError:
+               pass
+           self.user_callback(added, fullname, hosttarget, port)
+    callback_class = BrowseCallback(callback)
+    mdns.bonjour_browse_service('_daap._tcp', callback_class.mdns_callback)
     # NOTREACHED
 
 def runloop(daapserver):
