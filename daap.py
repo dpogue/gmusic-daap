@@ -71,7 +71,7 @@ def find_db(response):
 def find_base_playlist(response):
     pass
 
-def playinorder(host, save_dir, kwargs):
+def dump(host, save_dir, kwargs):
     client = libdaap.make_daap_client(host, **kwargs)
     if not client.connect():
         print "Error: can't connect"
@@ -83,6 +83,7 @@ def playinorder(host, save_dir, kwargs):
         print 'playlist name = %s' % client.playlist[k]['name']
         print 'playlist count = %s' % client.playlist[k]['count']
         print 'base playlist = %s' % client.playlist[k]['base']
+
 
 def main(argc, argv):
     prognam = argv[0]
@@ -113,7 +114,7 @@ def main(argc, argv):
         if port:
             kwargs['port'] = int(port)
 
-        playinorder(host, save_dir, kwargs)
+        dump(host, save_dir, kwargs)
 
     except Exception, e:
         print 'An error occurred: ' + str(e)
