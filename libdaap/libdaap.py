@@ -592,8 +592,8 @@ class DaapClient(object):
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,
                                          self.session)
-        # We've been disconnected?
-        except IOError:
+        # We've been disconnected, or server gave incorrect response?
+        except (IOError, ValueError):
             pass
 
     # Generic check for http response.  ValueError() on unexpected response.
