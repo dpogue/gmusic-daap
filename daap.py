@@ -84,55 +84,6 @@ def playinorder(host, save_dir, kwargs):
         print 'playlist count = %s' % client.playlist[k]['count']
         print 'base playlist = %s' % client.playlist[k]['base']
 
-    """
-    conn = httplib.HTTPConnection(host, **kwargs)
-    print 'playinorder: /server-info'
-    conn.request('GET', '/server-info')
-    # Don't really care about what I get back here.
-    response = conn.getresponse()
-    handleresponse(response)
-    # Don't really care about this one either ...
-    print 'playinorder: /content-codes'
-    conn.request('GET', '/content-codes')
-    response = conn.getresponse()
-    handleresponse(response)
-    # Login ...
-    print 'playinorder: /login'
-    conn.request('GET', '/login')
-    response = decode_response(handleresponse(conn.getresponse()))
-    session_id = find_session(response)
-    if not session_id:
-        print 'no session'
-        # XXX error handling?
-    print 'session-id = %d' % session_id
-    print 'playinorder: /databases'
-    conn.request('GET', '/databases?session-id=%d' % session_id)
-    response = decode_response(handleresponse(conn.getresponse()))
-    db_id = find_db(response)
-    if not db_id:
-        print 'no database id found'
-        # XXX error handling?
-    #(pl_id, playlist) = find_base_playlist(response)
-    #if not pl_id:
-    #    print 'no playlist id found'
-    #    # XXX error handling?
-    # XXX HACK
-    playlist = []
-    playlist.append((2, 'mp3'))
-    for item in playlist:
-        #(itemid, itemtype, itemname) = item
-        (itemid, itemtype) = item
-        print 'playinorder: downloading item %d type %s' % (itemid, itemtype)
-        conn.request('GET', (('/databases/%d/items/%d.%s?meta=' +
-                             'dmap.itemkind,dmap.itemid,' + 
-                             'dmap.containeritemid&session-id=%d') %
-                             (db_id, itemid, itemtype, session_id)))
-        rawdata = handleresponse(conn.getresponse())
-        filename = '.'.join([str(itemid), itemtype])
-        open(os.path.join(save_dir, filename), 'wb').write(rawdata)
-    conn.close()
-    """
-
 def main(argc, argv):
     prognam = argv[0]
     kwargs = dict()
