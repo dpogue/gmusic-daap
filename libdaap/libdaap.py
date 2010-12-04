@@ -468,7 +468,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # in urlparse (doesn't support daap but it's basically the same
         # as http).
         endconn = False
-        print 'CONN FROM ', self.client_address
         try:
             # You can do virtual host with this but we don't support for now
             # and actually strip it out.
