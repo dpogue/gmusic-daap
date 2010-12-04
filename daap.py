@@ -40,9 +40,7 @@ import getopt
 # XXX http.client in Python 3
 import httplib
 
-from libdaap import *
-from libdaap import decode_response
-#import mdns
+import libdaap
 
 VERSION = '0.1'
 
@@ -57,8 +55,13 @@ def version(prognam):
     sys.exit(1)
 
 def scanmdns():
-    print 'error: not supported, use mDNS(1) or avahi-browse(1)'
-    sys.exit(1)
+    try:
+        # no callback: it will print debug data
+        libdaap.browse_mdns(None)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        sys.exit(1)
 
 def handleresponse(response):
     print 'HTTP status %d %s' % (response.status, response.reason)
@@ -72,21 +75,6 @@ def handleresponse(response):
         print 'Unsupported http response'
         return None
 
-# XXX perform more checks, as is it is a bit dodgy
-def find_session(response):
-    print 'find_session:'
-    print 'response: ', response
-    try:
-        [(code, body)] = response
-        if code != 'mlog':
-            raise ValueError
-        [ok, session_msg] = body
-        code, body = session_msg
-        return body
-    except ValueError:
-        pass
-    return 0
-
 def find_db(response):
     print 'find_db:'
     print 'response: ', response
@@ -95,8 +83,12 @@ def find_db(response):
 def find_base_playlist(response):
     pass
 
-def playinorder(host, save_dir, port=DEFAULT_PORT):
-    conn = httplib.HTTPConnection(host, port)
+def playinorder(host, save_dir, kwargs):
+    client = libdaap.make_daap_client(host, **kwargs)
+    client.connect()
+    print client.session
+    """
+    conn = httplib.HTTPConnection(host, **kwargs)
     print 'playinorder: /server-info'
     conn.request('GET', '/server-info')
     # Don't really care about what I get back here.
@@ -142,6 +134,7 @@ def playinorder(host, save_dir, port=DEFAULT_PORT):
         filename = '.'.join([str(itemid), itemtype])
         open(os.path.join(save_dir, filename), 'wb').write(rawdata)
     conn.close()
+    """
 
 def main(argc, argv):
     prognam = argv[0]
@@ -172,7 +165,7 @@ def main(argc, argv):
         if port:
             kwargs['port'] = int(port)
 
-        playinorder(host, save_dir, **kwargs)
+        playinorder(host, save_dir, kwargs)
 
     except Exception, e:
         print 'An error occurred: ' + str(e)
