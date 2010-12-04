@@ -656,6 +656,7 @@ class DaapClient(object):
             itemdict[itemid]['name'] = itemname
             itemdict[itemid]['duration'] = itemduration
             itemdict[itemid]['size'] = itemsize
+            itemdict[itemid]['enclosure'] = itemenclosure
         self.items[playlist_id] = itemdict
 
     def sessionize(self, request, query):
@@ -712,7 +713,7 @@ class DaapClient(object):
         except (AttributeError, IOError):
             pass
 
-    def daap_get_file_request(file_id):
+    def daap_get_file_request(self, file_id):
         """daap_file_get_url(file_id) -> url
         Helper function to convert from a file id to a http request that we can
         use to download stuff.
@@ -720,7 +721,11 @@ class DaapClient(object):
         It's useful to remember that daap is just http, so you can use any http
         client you like here.
         """
-        pass   
+        # 1 is default playlist, so it will contain everything.
+        enclosure = self.items[1][file_id]['enclosure']
+        if not enclosure:
+            enclosure = 'mp3'    # Assume if None
+        return '/databases/%d/items/%d.%s' % (self.db_id, file_id, enclosure)
 
 def make_daap_client(host, port=DEFAULT_PORT):
     return DaapClient(host, port)

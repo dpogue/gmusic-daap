@@ -88,6 +88,8 @@ def dump(host, save_dir, kwargs):
             print '    media name = %s' % client.items[k][k_]['name']
             print '    media duration = %s' % client.items[k][k_]['duration']
             print '    media size = %s' % client.items[k][k_]['size']
+            print '    media enclosure = %s' % client.items[k][k_]['enclosure']
+            print '    media path = %s' % client.daap_get_file_request(k_)
 
 def main(argc, argv):
     prognam = argv[0]
