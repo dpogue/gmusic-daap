@@ -79,11 +79,17 @@ def main(argc, argv):
         if len(args) != 1:
             usage(prognam)
 
-        if use_mdns:
-            install_mdns('pydaap', **kwargs)
         # XXX hardcoded module for ready-to-eat server.
         backend = filebackend.Backend(args[0])
         server = make_daap_server(backend, **kwargs)
+        if not server:
+            raise RuntimeError('Cannot instiantiate server instance')
+        # In robust mode, the server can return a port that's different
+        # from the one we requested.
+        address, port = server.server_address
+        kwargs['port'] = port
+        if use_mdns:
+            install_mdns('pydaap', **kwargs)
         runloop(server)
 
     # catch all

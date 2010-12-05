@@ -37,6 +37,7 @@ import BaseHTTPServer
 import SocketServer
 import threading
 import httplib
+import socket
 
 import mdns
 from const import *
@@ -560,12 +561,24 @@ def browse_mdns(callback):
 def runloop(daapserver):
     daapserver.serve_forever()
 
-# Note: We can try port 3689 and then fallback to a random port, 
-# except in case where the user hardcodes a port to use.
 def make_daap_server(backend, name='pydaap', port=DEFAULT_PORT,
-                     max_conn=DAAP_MAXCONN):
+                     max_conn=DAAP_MAXCONN, robust=True):
     handler = DaapHttpRequestHandler
-    httpd = DaapTCPServer(('', port), handler)
+    failed = False
+    while True:
+        try:
+            httpd = DaapTCPServer(('', port), handler)
+            break
+        except socket.error, e:
+            if not port == 0:
+                port = 0
+                continue
+            else:
+                failed = True
+                break
+    if failed:
+        return None
+    
     httpd.set_name(name)
     httpd.set_backend(backend)
     httpd.set_maxconn(max_conn)
