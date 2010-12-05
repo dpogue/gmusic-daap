@@ -525,7 +525,7 @@ def mdns_callback(sdRef, flags, errorCode, name, regtype, domain):
 def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
                  mdns_callback=mdns_callback):
     # XXX: what to do if this doesn't work?
-    return mdns.bonjour_register_service(name, '_daap._tcp', port=DEFAULT_PORT,
+    return mdns.bonjour_register_service(name, '_daap._tcp', port=port,
         callback=mdns_callback)
 
 def uninstall_mdns(ref):
