@@ -10,6 +10,15 @@ off with libdaap.install_mdns() with a sharename as an argument.  This
 function returns a reference which you can destroy with 
 libdaap.uninstall_mdns().
 
+NOTE: If robust=True argument is set (the default) the server creation 
+is "robust".  This means if if cannot find the port specified it will pick
+an unused port.  For this reason, when you install mdns sharing you must
+always check the port returned by the server.  You can do:
+
+address, port = serverobj.server_address
+
+to the port of the server object.
+
 There are more arguments to these functions to change the port settings
 among others, refer to the source code for help.
 
