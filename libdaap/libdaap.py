@@ -100,7 +100,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         s = self.connpool.pop()
         self.activeconn[s] = threading.Timer(DAAP_TIMEOUT,
                                              self.daap_timeout_callback,
-                                             s)
+                                             [s])
         self.activeconn[s].start()
         return s
 
@@ -112,7 +112,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         # Pants...  we need to create a new timer object.
         self.activeconn[s] = threading.Timer(DAAP_TIMEOUT,
                                              self.daap_timeout_callback,
-                                             s)
+                                             [s])
         self.activeconn[s].start()
         # OK, thank the caller for telling us the guy's alive
         return True
@@ -603,7 +603,7 @@ class DaapClient(object):
             # If it works, Re-arm the timer
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,
-                                         self.session)
+                                         [self.session])
         # We've been disconnected, or server gave incorrect response?
         except (IOError, ValueError):
             pass
@@ -704,7 +704,7 @@ class DaapClient(object):
             # Finally, if this all works, start the heartbeat timer.
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,
-                                         self.session)
+                                         [self.session])
             return True
         # We've been disconnected or there was a problem?
         except (IOError, ValueError):
