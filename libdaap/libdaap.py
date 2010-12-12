@@ -737,7 +737,9 @@ class DaapClient(object):
         enclosure = self.items[1][file_id]['enclosure']
         if not enclosure:
             enclosure = 'mp3'    # Assume if None
-        return '/databases/%d/items/%d.%s' % (self.db_id, file_id, enclosure)
+        fn = '/databases/%d/items/%d.%s' % (self.db_id, file_id, enclosure)
+        fn += '?session-id=%s' % self.session
+        return fn
 
 def make_daap_client(host, port=DEFAULT_PORT):
     return DaapClient(host, port)
