@@ -102,6 +102,7 @@ class ChunkedStreamObj(object):
             self.streamsize = end - start + 1
             rangetext = (str(start) + '-' + str(end) + '/' + 
                          str(self.filesize)) 
+        self.unread = self.streamsize
         self.rangetext = rangetext
 
     # Be careful: if you call this your object is consumed and you will
@@ -109,11 +110,24 @@ class ChunkedStreamObj(object):
     def __str__(self):
         return self.fileobj.read()
 
+    def _get_readsize(self):
+        readsize = 0
+        if self.unread > self.chunksize:
+            readsize = self.chunksize
+        else:
+            readsize = self.unread
+        self.unread -= readsize
+        return readsize
+
     def __iter__(self):
-        data = self.fileobj.read(self.chunksize)
-        while data:
-            yield data
-            data = self.fileobj.read(self.chunksize)
+        while True:
+            readsize = self._get_readsize()
+            data = self.fileobj.read(readsize)
+            # Maybe file got truncated
+            if data:
+                yield data
+            if self.unread == 0:
+                break
 
     def __len__(self):
         return self.streamsize
