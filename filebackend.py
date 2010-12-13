@@ -39,13 +39,16 @@
 
 import os
 from itertools import count
+import libdaap
 
-supported_exts = ['.mp3', '.mp4']
+audio_ext = ['.mp3']
+video_ext = ['.mp4']
 
 class Backend(object):
-    def __init__(self, path, ext=supported_exts):
+    def __init__(self, path, audio_ext=audio_ext, video_ext=video_ext):
         self.path = path
-        self.ext = ext
+        self.audio_ext = audio_ext
+        self.video_ext = video_ext
         self.items = dict()
         self.itempaths = dict()
         self.build_files()
@@ -54,10 +57,17 @@ class Backend(object):
         for c, entry in zip(count(1), os.listdir(self.path)):
             nam, ext = os.path.splitext(entry)
             path = os.path.join(self.path, entry)
-            if (os.path.isfile(os.path.join(self.path, entry)) and
-              ext in self.ext):
-                self.items[c] = [('miid', c), ('minm', nam), ('asfm', ext)]
-                self.itempaths[c] = path
+            if os.path.isfile(os.path.join(self.path, entry)):
+                item = [('miid', c), ('minm', nam), ('asfm', ext)]
+                media_kind = None
+                if ext in self.audio_ext:
+                    media_kind = ('aeMK', libdaap.DAAP_MEDIAKIND_AUDIO)
+                elif ext in self.video_ext:
+                    media_kind = ('aeMK', libdaap.DAAP_MEDIAKIND_VIDEO)
+                if media_kind:
+                    item.append(media_kind)
+                    self.items[c] = item
+                    self.itempaths[c] = path
 
     def get_playlists(self):
         return []

@@ -662,6 +662,7 @@ class DaapClient(object):
             itemduration = find_daap_tag('astm', item)
             itemsize = find_daap_tag('assz', item)
             itemenclosure = find_daap_tag('asfm', item)
+            file_type = find_daap_tag('aeMK', item)    # media kind
             itemdict[itemid] = dict()
             itemdict[itemid]['id'] = itemid
             itemdict[itemid]['kind'] = itemkind
@@ -669,6 +670,7 @@ class DaapClient(object):
             itemdict[itemid]['duration'] = itemduration
             itemdict[itemid]['size'] = itemsize
             itemdict[itemid]['enclosure'] = itemenclosure
+            itemdict[itemid]['file_type'] = file_type
         self.items[playlist_id] = itemdict
 
     def sessionize(self, request, query):
