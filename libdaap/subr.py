@@ -116,13 +116,13 @@ class ChunkedStreamObj(object):
             readsize = self.chunksize
         else:
             readsize = self.unread
-        self.unread -= readsize
         return readsize
 
     def __iter__(self):
         while True:
             readsize = self._get_readsize()
             data = self.fileobj.read(readsize)
+            self.unread -= readsize
             # Maybe file got truncated
             if data:
                 yield data
