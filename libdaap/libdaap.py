@@ -30,6 +30,7 @@
 # Server/Client implementation of DAAP
 
 import os
+import random
 # XXX merged into urllib.urlparse in Python 3
 import urlparse
 # XXX merged into http.server in Python 3.
@@ -38,6 +39,9 @@ import SocketServer
 import threading
 import httplib
 import socket
+
+# Where do I get this guy in Python?
+MAX_INT = 4294967295
 
 import mdns
 from const import *
@@ -85,7 +89,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     def set_maxconn(self, maxconn):
         # NB: the DAAP session id can't be 0.
         # These are easily guessible ... maybe we should randomize.
-        self.connpool = range(1, maxconn + 1)
+        self.maxconn = maxconn
         self.activeconn = dict()
 
     def daap_timeout_callback(self, s):
@@ -95,9 +99,13 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         return len(self.activeconn)
 
     def new_session(self):
-        if not self.connpool:
+        if self.session_count() == self.maxconn:
             return None
-        s = self.connpool.pop()
+        while True:
+            # NB: the session must be a non-zero.
+            s = random.randint(1, MAX_INT)
+            if not s in self.activeconn:
+                break
         self.activeconn[s] = threading.Timer(DAAP_TIMEOUT,
                                              self.daap_timeout_callback,
                                              [s])
@@ -125,7 +133,6 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
             # XXX can't just delete? - need to keep a reference count for the
             # connection, we can have data/control connection?
             del self.activeconn[s]
-            self.connpool.append(s)
         except ValueError:
             pass
 
