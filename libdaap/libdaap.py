@@ -77,6 +77,7 @@ DEFAULT_CONTENT_TYPE = 'application/x-dmap-tagged'
 
 class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True    # setsockopt(... SO_REUSEADDR, 1)
+    session_lock = threading.Lock()
 
     # New functions in subclass.  Note: we can separate some of these out
     # into separate libraries but not now.
@@ -99,7 +100,9 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         return len(self.activeconn)
 
     def new_session(self):
+        self.session_lock.acquire()
         if self.session_count() == self.maxconn:
+            self.session_lock.release()
             return None
         while True:
             # NB: the session must be a non-zero.
@@ -110,6 +113,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                                              self.daap_timeout_callback,
                                              [s])
         self.activeconn[s].start()
+        self.session_lock.release()
         return s
 
     def renew_session(self, s):
