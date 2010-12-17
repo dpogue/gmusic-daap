@@ -61,14 +61,6 @@ def scanmdns():
     finally:
         sys.exit(1)
 
-def find_db(response):
-    print 'find_db:'
-    print 'response: ', response
-    return 1
-
-def find_base_playlist(response):
-    pass
-
 def dump(host, kwargs):
     client = libdaap.make_daap_client(host, **kwargs)
     if not client.connect():
