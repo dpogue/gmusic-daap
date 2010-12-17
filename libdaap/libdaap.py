@@ -41,7 +41,8 @@ import httplib
 import socket
 
 # Where do I get this guy in Python?
-MAX_INT = 4294967295
+# NB: equivalent to INT32_MAX.
+MAX_SESSION = 2147483647
 
 import mdns
 from const import *
@@ -106,7 +107,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
             return None
         while True:
             # NB: the session must be a non-zero.
-            s = random.randint(1, MAX_INT)
+            s = random.randint(1, MAX_SESSION)
             if not s in self.activeconn:
                 break
         self.activeconn[s] = threading.Timer(DAAP_TIMEOUT,
