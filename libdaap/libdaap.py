@@ -76,6 +76,11 @@ DAAP_UNAVAILABLE = 503 # We are full
 
 DEFAULT_CONTENT_TYPE = 'application/x-dmap-tagged'
 
+DEFAULT_DAAP_META = ('dmap.itemkind,dmap.itemid,dmap.itemname,' + 
+                     'dmap.containeritemid,dmap.parentcontainerid,' +
+                     'daap.songtime,daap.songsize,daap.songformat,' +
+                     'com.apple.itunes.mediakind')
+
 class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True    # setsockopt(... SO_REUSEADDR, 1)
     session_lock = threading.Lock()
@@ -695,7 +700,8 @@ class DaapClient(object):
     def sessionize(self, request, query):
         new_request = request + '?session-id=%d' % self.session
         # XXX urllib.quote?
-        new_request += '&'.join([name + '=' + param for name, param in query])
+        new_request = '&'.join([new_request] + 
+                               [name + '=' + param for name, param in query])
         return new_request
 
     def connect(self):
@@ -718,7 +724,7 @@ class DaapClient(object):
             for k in self.playlists.keys():
                 self.conn.request('GET', self.sessionize(
                     '/databases/%d/containers/%d/items' % (self.db_id, k),
-                    []))
+                    [('meta', DEFAULT_DAAP_META)]))
                 self.check_reply(self.conn.getresponse(),
                                  callback=self.handle_items,
                                  args=[k])
