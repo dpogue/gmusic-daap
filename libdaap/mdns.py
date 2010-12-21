@@ -30,6 +30,8 @@
 #
 
 import pybonjour
+import select
+import errno
 
 # Example callback
 def register_callback(sdRef, flags, errorCode, name, regtype, domain):
@@ -46,9 +48,20 @@ def bonjour_register_service(name, regtype, port, callback):
                                        regtype=regtype,
                                        port=port,
                                        callBack=callback)
-    # XXX We can set up a select() here but nevermind, we'll just wait.
     # This relies on the mDNSResponder/avahi running, which we might
     # not want to count on.
+    while True:
+        try:
+            ready = select.select([ref], [], [])
+            break
+        except KeyboardInterrupt, e:
+            print 'ekyboard interrupt'
+        except select.error, e:
+            if errno.errorcode == errno.EINTR:
+                print 'eintr?'
+                continue
+            else:
+                raise e
     pybonjour.DNSServiceProcessResult(ref)
     return ref
 
@@ -57,6 +70,7 @@ class BonjourBrowseCallbacks(object):
 
     def __init__(self, callback):
         self.user_callback = callback
+        self.resolved = False
 
     def resolve_callback(self, sdRef, flags, interfaceIndex, errorCode,
                          fullname, hosttarget, port, txtRecord):
@@ -88,7 +102,20 @@ class BonjourBrowseCallbacks(object):
                                                   regtype,
                                                   replyDomain,
                                                   self.resolve_callback)
-        pybonjour.DNSServiceProcessResult(resolve_ref)
+        while not self.resolved:
+            try:
+                ready = select.select([resolve_ref], [], [])
+                pybonjour.DNSServiceProcessResult(resolve_ref)
+            except select.error, e:
+                print 'sleect '
+                if errno.errorcode == errno.EINTR:
+                    continue
+                else:
+                    raise e
+            except KeyboardInterrupt:
+                self.resolved = True
+                break
+
         resolve_ref.close()
 
 # XXX This API is not very good because there is no way to cancel it.
@@ -97,6 +124,15 @@ def bonjour_browse_service(regtype, callback):
     ref = pybonjour.DNSServiceBrowse(regtype=regtype,
                                      callBack=callback_object.browse_callback)
     # XXX Setup select() and wait here?  Or maybe make async somehow?
-    while True:
-        pybonjour.DNSServiceProcessResult(ref)
-
+    while not callback_object.resolved:
+        try:
+            ready = select.select([ref], [], [])
+            pybonjour.DNSServiceProcessResult(ref)
+        except select.error, e:
+            print 'select error'
+            if errno.errorcode == errno.EINTR:
+                continue
+            else:
+                raise e
+        except KeyboardInterrupt:
+            break

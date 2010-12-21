@@ -119,11 +119,11 @@ def main(argc, argv):
 
         dump(host, kwargs)
 
+    except KeyboardInterrupt:
+        pass
     except Exception, e:
         print 'An error occurred: ' + str(e)
         raise
-    except KeyboardInterrupt:
-        pass
 
     return 0
 
