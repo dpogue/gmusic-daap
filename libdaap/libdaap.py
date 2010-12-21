@@ -555,9 +555,16 @@ def browse_mdns(callback):
        def __init__(self, callback):
            self.user_callback = callback
        def mdns_callback(self, added, fullname, hosttarget, port):
-           # XXX not exactly sure why it does this, but we strip away the
-           # dead character.
-           fullname = fullname.replace('\\032', ' ')
+           # XXX not exactly sure why it does this, but we can fix it up.
+           # If there's something we can convert back to ASCII then just skip
+           # over.
+           fullname = fullname.replace('\\032', ' ').replace('\\039', "'")
+           #for x in xrange(0, 0x100):
+           #    try:
+           #        # note: zero padding used
+           #        fullname = fullname.replace('\\0%00d' % x, chr(x))
+           #    except UnicodeDecodeError:
+           #        continue
            # Strip away the '_daap._tcp...'
            try:
                fullname = fullname[:fullname.rindex('._daap._tcp')]

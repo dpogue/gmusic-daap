@@ -53,16 +53,16 @@ def bonjour_register_service(name, regtype, port, callback):
     while True:
         try:
             ready = select.select([ref], [], [])
+            pybonjour.DNSServiceProcessResult(ref)
             break
         except KeyboardInterrupt, e:
-            print 'ekyboard interrupt'
+            break
         except select.error, e:
             if errno.errorcode == errno.EINTR:
                 print 'eintr?'
                 continue
             else:
                 raise e
-    pybonjour.DNSServiceProcessResult(ref)
     return ref
 
 # Use a Python class so we can stash our state inside it.
