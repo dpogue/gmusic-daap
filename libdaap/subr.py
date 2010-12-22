@@ -291,7 +291,6 @@ def split_url_path(urlpath):
        Takes a GET request and then splits it into the file component parts
        as a list and a dictionary of parameters.
     """
-    print 'urlpath is %s' % urlpath
     parts = urlpath.split('?')
     if len(parts) > 1 and parts[1]:
         path, query = parts
