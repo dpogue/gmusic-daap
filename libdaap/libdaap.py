@@ -94,8 +94,6 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         self.name = name
 
     def set_maxconn(self, maxconn):
-        # NB: the DAAP session id can't be 0.
-        # These are easily guessible ... maybe we should randomize.
         self.maxconn = maxconn
         self.activeconn = dict()
 
