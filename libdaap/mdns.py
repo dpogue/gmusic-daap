@@ -107,7 +107,6 @@ class BonjourBrowseCallbacks(object):
                 ready = select.select([resolve_ref], [], [])
                 pybonjour.DNSServiceProcessResult(resolve_ref)
             except select.error, e:
-                print 'sleect '
                 if errno.errorcode == errno.EINTR:
                     continue
                 else:
