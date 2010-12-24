@@ -1,3 +1,13 @@
+Unless otherwise specified, pydaap is licensed under the GNU General Public
+License Version 2 (or at your option) any later version.  A copy of the 
+license is included below.
+
+The const.txt file is taken from forked-daap-0.12, which is licensed under
+the GNU General Public License Version 2 (or at your option) any later version.
+
+Pybonjour is licensed under the MIT license, and a copy of the license may
+be found in the pybonjour.py file.
+
 		    GNU GENERAL PUBLIC LICENSE
 		       Version 2, June 1991
 
