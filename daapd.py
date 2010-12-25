@@ -101,7 +101,7 @@ def main(argc, argv):
                 r_ready, w_ready, e_ready = select.select(read_set, [], [])
                 if ref in r_ready:
                     mdns_callback(ref)
-                elif server_fileno in r_ready:
+                if server_fileno in r_ready:
                     server.handle_request()
             except select.error, (err, errstring):
                 if err == errno.EINTR:
