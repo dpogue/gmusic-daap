@@ -95,11 +95,11 @@ class BonjourBrowseCallbacks(object):
             try:
                 ready = select.select([resolve_ref], [], [])
                 pybonjour.DNSServiceProcessResult(resolve_ref)
-            except select.error, e:
-                if errno.errorcode == errno.EINTR:
+            except select.error, (err, errstring):
+                if err == errno.EINTR:
                     continue
                 else:
-                    raise e
+                    raise
             except KeyboardInterrupt:
                 self.resolved = True
                 break
@@ -116,11 +116,11 @@ def bonjour_browse_service(regtype, callback):
         try:
             ready = select.select([ref], [], [])
             pybonjour.DNSServiceProcessResult(ref)
-        except select.error, e:
+        except select.error, (err, errstring):
             print 'select error'
-            if errno.errorcode == errno.EINTR:
+            if err == errno.EINTR:
                 continue
             else:
-                raise e
+                raise
         except KeyboardInterrupt:
             break
