@@ -537,6 +537,13 @@ def mdns_callback(sdRef, flags, errorCode, name, regtype, domain):
     else:
         pass
 
+# install_mdns: this returns a tuple of a socket, and a processing callback.  
+# User is # responsible testing readability of the socket, and when 
+# it is readable calling the processing callback returned.  The user callback
+# supplied as a part of the input is called as a part within the processing
+# callback.  It may take multiple calls to the processing callback for it
+# to accumulate enough data to call your user-supplied callback, do not
+# assume readability on the socket means your callback will be called.
 def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
                  mdns_callback=mdns_callback):
     return mdns.bonjour_register_service(name, '_daap._tcp', port=port,
