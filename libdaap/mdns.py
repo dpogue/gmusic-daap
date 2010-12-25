@@ -43,31 +43,20 @@ def register_callback(sdRef, flags, errorCode, name, regtype, domain):
 def bonjour_unregister_service(ref):
     ref.close()
 
+# bonjour_process_result() call this whenever a select on the socket reference
+# returns readable.
+def bonjour_process_result(ref):
+    pybonjour.DNSServiceProcessResult(ref)
+
 def bonjour_register_service(name, regtype, port, callback):
     ref = pybonjour.DNSServiceRegister(name=name,
                                        regtype=regtype,
                                        port=port,
                                        callBack=callback)
-    # This relies on the mDNSResponder/avahi running, which we might
-    # not want to count on.
-    while True:
-        try:
-            ready = select.select([ref], [], [])
-            pybonjour.DNSServiceProcessResult(ref)
-            break
-        except KeyboardInterrupt, e:
-            break
-        except select.error, e:
-            if errno.errorcode == errno.EINTR:
-                print 'eintr?'
-                continue
-            else:
-                raise e
-    return ref
+    return (ref, bonjour_process_result)
 
 # Use a Python class so we can stash our state inside it.
 class BonjourBrowseCallbacks(object):
-
     def __init__(self, callback):
         self.user_callback = callback
         self.resolved = False

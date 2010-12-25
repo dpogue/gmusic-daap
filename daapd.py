@@ -36,6 +36,7 @@
 import os
 import sys
 import getopt
+import select
 
 # Hardcoded example backend
 import filebackend
@@ -50,6 +51,15 @@ def version(prognam):
 def usage(prognam):
     print 'usage: %s [-vh] [[-c maxconn] [-p port] path]' % prognam
     sys.exit(1)
+
+class BonjourRegisterCallback(object):
+   def __init__(self, ref, callback):
+       self.ref = ref
+       self.callback = callback
+
+   def wait(self):
+       ready = select.select([self.ref], [], [])
+       self.callback(self.ref)
 
 def main(argc, argv):
     # Set some defaults.
@@ -89,7 +99,9 @@ def main(argc, argv):
         address, port = server.server_address
         kwargs['port'] = port
         if use_mdns:
-            install_mdns('pydaap', **kwargs)
+            ref, callback = install_mdns('pydaap', **kwargs)
+            BonjourRegisterCallback(ref, callback).wait()
+        
         runloop(server)
 
     # catch all

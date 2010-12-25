@@ -529,7 +529,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if endconn:
             self.wfile.close()
 
-# Example callback: there isn't much to do here right now.
+# Default mdns register callback.
 def mdns_callback(sdRef, flags, errorCode, name, regtype, domain):
     # XXX error handling?
     if errorCode != mdns.pybonjour.kDNSServiceErr_NoError:
@@ -539,7 +539,6 @@ def mdns_callback(sdRef, flags, errorCode, name, regtype, domain):
 
 def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
                  mdns_callback=mdns_callback):
-    # XXX: what to do if this doesn't work?
     return mdns.bonjour_register_service(name, '_daap._tcp', port=port,
         callback=mdns_callback)
 
