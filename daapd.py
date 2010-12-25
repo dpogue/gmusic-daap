@@ -52,15 +52,6 @@ def usage(prognam):
     print 'usage: %s [-vh] [[-c maxconn] [-p port] path]' % prognam
     sys.exit(1)
 
-class BonjourRegisterCallback(object):
-   def __init__(self, ref, callback):
-       self.ref = ref
-       self.callback = callback
-
-   def wait(self):
-       ready = select.select([self.ref], [], [])
-       self.callback(self.ref)
-
 def main(argc, argv):
     # Set some defaults.
     prognam = argv[0]
@@ -98,12 +89,25 @@ def main(argc, argv):
         # from the one we requested.
         address, port = server.server_address
         kwargs['port'] = port
+        ref = None
+        server_fileno = server.fileno()
         if use_mdns:
-            ref, callback = install_mdns('pydaap', **kwargs)
-            BonjourRegisterCallback(ref, callback).wait()
-        
-        runloop(server)
-
+            ref, mdns_callback = install_mdns('pydaap', **kwargs)
+        while True:
+            try:
+                read_set = [server_fileno]
+                if ref is not None:
+                    read_set.append(ref)
+                r_ready, w_ready, e_ready = select.select(read_set, [], [])
+                if ref in r_ready:
+                    mdns_callback(ref)
+                elif server_fileno in r_ready:
+                    server.handle_request()
+            except select.error, (err, errstring):
+                if err == errno.EINTR:
+                    continue
+                else:
+                    raise
     # catch all
     except Exception, e:
         print 'An error occurred: ' + str(e)
