@@ -34,11 +34,13 @@
 
 # !!! No user-serviceable parts below !!! 
 
+import errno
 import os
 import sys
 import getopt
 # XXX http.client in Python 3
 import httplib
+import select
 
 import libdaap
 
@@ -52,14 +54,26 @@ def version(prognam):
     print '%s %s' % (prognam, VERSION)
     sys.exit(1)
 
+def mdns_browse_callback(added, fullname, hosttarget, port):
+    print 'mdns_browse: '
+    print 'added: %s' % added
+    print 'name: %s' % fullname.encode('utf-8')
+    print 'host: %s' % hosttarget.encode('utf-8')
+    print 'port %s' % port
+
 def scanmdns():
-    try:
-        # no callback: it will print debug data
-        libdaap.browse_mdns(None)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        sys.exit(1)
+    callback = libdaap.browse_mdns(mdns_browse_callback)
+    while True:
+        refs = callback.get_refs()
+        try:
+            r, w, x = select.select(refs, [], [])
+            for i in r:
+                callback(i)
+        except select.error, (err, errstring):
+            if err == errno.EINTR:
+                continue
+            else:
+                raise
 
 def dump(host, kwargs):
     client = libdaap.make_daap_client(host, **kwargs)

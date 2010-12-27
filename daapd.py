@@ -33,6 +33,7 @@
 #
 # !!! No user servicable parts below. !!!
 
+import errno
 import os
 import sys
 import getopt
@@ -92,16 +93,16 @@ def main(argc, argv):
         ref = None
         server_fileno = server.fileno()
         if use_mdns:
-            ref, mdns_callback = install_mdns('pydaap', **kwargs)
+            callback = install_mdns('pydaap', **kwargs)
         while True:
             try:
-                read_set = [server_fileno]
+                rset = [server_fileno]
                 if ref is not None:
                     read_set.append(ref)
-                r_ready, w_ready, e_ready = select.select(read_set, [], [])
-                if ref in r_ready:
+                r, w, x = select.select(rset, [], [])
+                if ref in r:
                     mdns_callback(ref)
-                if server_fileno in r_ready:
+                if server_fileno in r:
                     server.handle_request()
             except select.error, (err, errstring):
                 if err == errno.EINTR:

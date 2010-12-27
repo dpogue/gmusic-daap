@@ -552,8 +552,6 @@ def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
 def uninstall_mdns(ref):
     mdns.bonjour_unregister_service(ref)
 
-# NOTE: This is a runloop and doesn't return.  Don't run it from a place
-# where code execution must continue.
 def browse_mdns(callback):
     # This class allows us to make a callback and then do some post-processing
     # before we really pass the stuff back to the user.  We need it because
@@ -579,12 +577,10 @@ def browse_mdns(callback):
                fullname = fullname[:fullname.rindex('._daap._tcp')]
            except IndexError:
                pass
-           if self.user_callback:
-               self.user_callback(added, fullname, hosttarget, port)
-    callback_class = BrowseCallback(callback)
-    mdns_callback = callback_class.mdns_callback if callback else None
-    mdns.bonjour_browse_service('_daap._tcp', mdns_callback)
-    # NOTREACHED
+           self.user_callback(added, fullname, hosttarget, port)
+    callback_obj = BrowseCallback(callback)
+    mdns_callback = callback_obj.mdns_callback
+    return mdns.bonjour_browse_service('_daap._tcp', mdns_callback)
 
 def runloop(daapserver):
     daapserver.serve_forever()

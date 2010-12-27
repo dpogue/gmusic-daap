@@ -33,27 +33,72 @@ import pybonjour
 import select
 import errno
 
-# Example callback
-def register_callback(sdRef, flags, errorCode, name, regtype, domain):
-    if errorCode == pybonjour.kDNSServiceErr_NoError:
-        pass
-    else:
-        pass
-
 def bonjour_unregister_service(ref):
     ref.close()
 
-# bonjour_process_result() call this whenever a select on the socket reference
-# returns readable.
-def bonjour_process_result(ref):
-    pybonjour.DNSServiceProcessResult(ref)
+# Use a Python class so we can stash our state inside it.
+class BonjourCallbacks(object):
+    def __init__(self, user_callback):
+        self.user_callback = user_callback
+        self.refs = []
+
+    def add_ref(self, ref):
+        self.refs.append(ref)
+
+    def del_ref(self, ref):
+        self.refs.remove(ref)
+
+    def get_refs(self):
+        return self.refs
+
+    def close(self):
+        for ref in self.refs:
+            ref.close()
+
+    def __call__(self, ref):
+        pybonjour.DNSServiceProcessResult(ref)
+
+    def register_callback(self, sdRef, flags, errorCode, name, regtype,
+                               domain):
+        if errorCode != pybonjour.kDNSServiceErr_NoError:
+            return
+        self.user_callback(sdRef, flags, errorCode, name, regtype, domain)
+
+    def browse_callback(self, sdRef, flags, interfaceIndex, errorCode,
+                        serviceName, regtype, replyDomain):
+        if errorCode != pybonjour.kDNSServiceErr_NoError:
+            return
+
+        if (flags & pybonjour.kDNSServiceFlagsAdd):
+            self.added = True
+        else:
+            self.added = False
+
+        ref = pybonjour.DNSServiceResolve(0,
+                                          interfaceIndex,
+                                          serviceName,
+                                          regtype,
+                                          replyDomain,
+                                          self.resolve_callback)
+        self.add_ref(ref)
+
+    def resolve_callback(self, sdRef, flags, interfaceIndex, errorCode,
+                         fullname, hosttarget, port, txtRecord):
+        if errorCode != pybonjour.kDNSServiceErr_NoError:
+            return
+
+        self.user_callback(self.added, fullname, hosttarget, port)
+        self.del_ref(sdRef)
+        sdRef.close()
 
 def bonjour_register_service(name, regtype, port, callback):
+    callback_obj = BonjourCallbacks(callback)
     ref = pybonjour.DNSServiceRegister(name=name,
                                        regtype=regtype,
                                        port=port,
-                                       callBack=callback)
-    return (ref, bonjour_process_result)
+                                       callBack=callback_obj.register_callback)
+    callback_obj.add_ref(ref)
+    return callback_obj
 
 # Use a Python class so we can stash our state inside it.
 class BonjourBrowseCallbacks(object):
@@ -106,21 +151,9 @@ class BonjourBrowseCallbacks(object):
 
         resolve_ref.close()
 
-# XXX This API is not very good because there is no way to cancel it.
 def bonjour_browse_service(regtype, callback):
-    callback_object = BonjourBrowseCallbacks(callback)
+    callback_obj = BonjourCallbacks(callback)
     ref = pybonjour.DNSServiceBrowse(regtype=regtype,
-                                     callBack=callback_object.browse_callback)
-    # XXX Setup select() and wait here?  Or maybe make async somehow?
-    while not callback_object.resolved:
-        try:
-            ready = select.select([ref], [], [])
-            pybonjour.DNSServiceProcessResult(ref)
-        except select.error, (err, errstring):
-            print 'select error'
-            if err == errno.EINTR:
-                continue
-            else:
-                raise
-        except KeyboardInterrupt:
-            break
+                                     callBack=callback_obj.browse_callback)
+    callback_obj.add_ref(ref)
+    return callback_obj
