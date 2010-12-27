@@ -29,3 +29,5 @@
 from libdaap import *
 from const import *
 
+# TODO: import constants from pybonjour or do a portable mapping between them
+# so we can refer to it in callbacks.
