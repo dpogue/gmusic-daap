@@ -549,8 +549,8 @@ def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
     return mdns.bonjour_register_service(name, '_daap._tcp', port=port,
         callback=mdns_callback)
 
-def uninstall_mdns(ref):
-    mdns.bonjour_unregister_service(ref)
+def uninstall_mdns(mdns_object):
+    mdns_object.close()
 
 def browse_mdns(callback):
     # This class allows us to make a callback and then do some post-processing
