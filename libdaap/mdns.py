@@ -43,9 +43,9 @@ class BonjourCallbacks(object):
     def __init__(self, user_callback):
         self.user_callback = user_callback
         self.refs = []
-        self.types = [pybonjour.kDNSServiceType_A,
-                      pybonjour.kDNSServiceType_AAAA]
-        self.ntypes = len(self.types)
+        self.query_types = [pybonjour.kDNSServiceType_A,
+                            pybonjour.kDNSServiceType_AAAA]
+        self.nquery_types = len(self.query_types)
 
     def add_ref(self, ref):
         self.refs.append(ref)
@@ -100,7 +100,7 @@ class BonjourCallbacks(object):
             af = socket.AF_INET
         if errorCode == pybonjour.kDNSServiceErr_NoError:
             self.host[idx].ips[af] = rdata
-        if self.ntypes == self.host[idx].typecount:
+        if self.nquery_types == self.host[idx].typecount:
             self.user_callback(self.host[idx].added,
                                self.host[idx].fullname,
                                self.host[idx].hosttarget,
@@ -114,7 +114,7 @@ class BonjourCallbacks(object):
                          fullname, hosttarget, port, txtRecord):
         if errorCode == pybonjour.kDNSServiceErr_NoError:
             old_idx = sdRef.fileno()
-            for typ in self.types:
+            for typ in self.query_types:
                 ref = pybonjour.DNSServiceQueryRecord(
                                               interfaceIndex = interfaceIndex,
                                               fullname = hosttarget,
