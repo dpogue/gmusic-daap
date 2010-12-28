@@ -17,7 +17,7 @@ always check the port returned by the server.  You can do:
 
 address, port = serverobj.server_address
 
-to the port of the server object.
+to obtain the port from the server object.
 
 There are more arguments to these functions to change the port settings
 among others, refer to the source code for help.
