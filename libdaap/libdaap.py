@@ -565,13 +565,11 @@ def browse_mdns(callback):
            # XXX not exactly sure why it does this, but we can fix it up.
            # If there's something we can convert back to ASCII then just skip
            # over.
-           fullname = fullname.replace('\\032', ' ').replace('\\039', "'")
-           #for x in xrange(0, 0x100):
-           #    try:
-           #        # note: zero padding used
-           #        fullname = fullname.replace('\\0%00d' % x, chr(x))
-           #    except UnicodeDecodeError:
-           #        continue
+           for x in xrange(0, 0x100):
+               try:
+                   fullname = fullname.replace('\\%03d' % x, chr(x))
+               except UnicodeDecodeError:
+                   continue
            # Strip away the '_daap._tcp...'
            try:
                fullname = fullname[:fullname.rindex('._daap._tcp')]
