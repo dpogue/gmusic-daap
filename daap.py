@@ -41,6 +41,7 @@ import getopt
 # XXX http.client in Python 3
 import httplib
 import select
+import socket
 
 import libdaap
 
@@ -54,12 +55,24 @@ def version(prognam):
     print '%s %s' % (prognam, VERSION)
     sys.exit(1)
 
-def mdns_browse_callback(added, fullname, hosttarget, port):
+def mdns_browse_callback(added, fullname, hosttarget, ips, port):
+
     print 'mdns_browse: '
     print 'added: %s' % added
     print 'name: %s' % fullname.encode('utf-8')
     print 'host: %s' % hosttarget.encode('utf-8')
-    print 'port %s' % port
+    print 'possible addresses:'
+    for af in ips.keys():
+        ip = ips[af]
+        af_str = "(unknown)"
+        if af == socket.AF_INET:
+            af_str = "AF_INET"
+        elif af == socket.AF_INET6:
+            af_str = "AF_INET6"
+        ip_str = socket.inet_ntop(af, ip)
+        print '    address family: %s' % af_str
+        print '    ip: %s' % ip_str
+    print 'port: %s' % port
 
 def scanmdns():
     callback = libdaap.browse_mdns(mdns_browse_callback)

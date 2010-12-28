@@ -31,6 +31,7 @@
 
 import pybonjour
 import select
+import socket
 import errno
 
 # Use a Python class so we can stash our state inside it.
@@ -79,12 +80,45 @@ class BonjourCallbacks(object):
                                           self.resolve_callback)
         self.add_ref(ref)
 
+    def query_callback(self, sdRef, flags, interfaceIndex, errorCode, fllname,
+                       rrtype, rrclass, rdata, ttl):
+        self.typecount += 1
+        af = socket.AF_UNSPEC
+        if rrtype == pybonjour.kDNSServiceType_AAAA:
+            af = socket.AF_INET6
+        elif rrtype == pybonjour.kDNSServiceType_A:
+            af = socket.AF_INET
+        if errorCode == pybonjour.kDNSServiceErr_NoError:
+            self.ips[af] = rdata
+        if self.typecount == self.ntypes:
+            self.user_callback(self.added,
+                               self.fullname,
+                               self.hosttarget,
+                               self.ips,
+                               self.port)
+        self.del_ref(sdRef)
+        sdRef.close()
+
     def resolve_callback(self, sdRef, flags, interfaceIndex, errorCode,
                          fullname, hosttarget, port, txtRecord):
-        if errorCode != pybonjour.kDNSServiceErr_NoError:
-            return
+        if errorCode == pybonjour.kDNSServiceErr_NoError:
+            types = [pybonjour.kDNSServiceType_A,
+                     pybonjour.kDNSServiceType_AAAA]
+            for typ in types:
+                ref = pybonjour.DNSServiceQueryRecord(
+                                              interfaceIndex = interfaceIndex,
+                                              fullname = hosttarget,
+                                              rrtype = typ,
+                                              callBack = self.query_callback)
+                self.add_ref(ref)
 
-        self.user_callback(self.added, fullname, hosttarget, port)
+            self.ntypes = len(types)
+            self.typecount = 0
+            self.fullname = fullname
+            self.hosttarget = hosttarget
+            self.port = port
+            self.ips = dict()
+
         self.del_ref(sdRef)
         sdRef.close()
 
