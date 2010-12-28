@@ -54,7 +54,3 @@ http (recall daap is http-based).
 
 Call libdaap.browse_mdns(callback) to browse for daap shares and have it
 notify you via the callback when things are published or removed.
-Callback has signature:
-
-callback(added, fullname, hosttarget, port)
-
