@@ -1,4 +1,4 @@
-# Miro - an RSS based video player application
+# pydaap - a Python-based daap media sharing library
 # Copyright (C) 2010 Participatory Culture Foundation
 #
 # This program is free software; you can redistribute it and/or modify
