@@ -96,8 +96,8 @@ class BonjourCallbacks(object):
                                self.hosttarget,
                                self.ips,
                                self.port)
-        self.del_ref(sdRef)
-        sdRef.close()
+            self.del_ref(sdRef)
+            sdRef.close()
 
     def resolve_callback(self, sdRef, flags, interfaceIndex, errorCode,
                          fullname, hosttarget, port, txtRecord):
