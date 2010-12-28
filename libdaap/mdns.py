@@ -34,11 +34,18 @@ import select
 import socket
 import errno
 
+# Dummy object
+class HostObject(object):
+    pass
+
 # Use a Python class so we can stash our state inside it.
 class BonjourCallbacks(object):
     def __init__(self, user_callback):
         self.user_callback = user_callback
         self.refs = []
+        self.types = [pybonjour.kDNSServiceType_A,
+                      pybonjour.kDNSServiceType_AAAA]
+        self.ntypes = len(self.types)
 
     def add_ref(self, ref):
         self.refs.append(ref)
@@ -67,10 +74,11 @@ class BonjourCallbacks(object):
         if errorCode != pybonjour.kDNSServiceErr_NoError:
             return
 
+        host = HostObject()
         if (flags & pybonjour.kDNSServiceFlagsAdd):
-            self.added = True
+            host.added = True
         else:
-            self.added = False
+            host.added = False
 
         ref = pybonjour.DNSServiceResolve(0,
                                           interfaceIndex,
@@ -78,46 +86,58 @@ class BonjourCallbacks(object):
                                           regtype,
                                           replyDomain,
                                           self.resolve_callback)
+        self.host[ref.fileno()] = host
         self.add_ref(ref)
 
-    def query_callback(self, sdRef, flags, interfaceIndex, errorCode, fllname,
+    def query_callback(self, sdRef, flags, interfaceIndex, errorCode, fullname,
                        rrtype, rrclass, rdata, ttl):
-        self.typecount += 1
+        idx = sdRef.fileno()
+        self.host[idx].typecount += 1
         af = socket.AF_UNSPEC
         if rrtype == pybonjour.kDNSServiceType_AAAA:
             af = socket.AF_INET6
         elif rrtype == pybonjour.kDNSServiceType_A:
             af = socket.AF_INET
         if errorCode == pybonjour.kDNSServiceErr_NoError:
-            self.ips[af] = rdata
-        if self.typecount == self.ntypes:
-            self.user_callback(self.added,
-                               self.fullname,
-                               self.hosttarget,
-                               self.ips,
-                               self.port)
+            self.host[idx].ips[af] = rdata
+        if self.ntypes == self.host[idx].typecount:
+            self.user_callback(self.host[idx].added,
+                               self.host[idx].fullname,
+                               self.host[idx].hosttarget,
+                               self.host[idx].ips,
+                               self.host[idx].port)
+        del self.host[idx]
         self.del_ref(sdRef)
         sdRef.close()
 
     def resolve_callback(self, sdRef, flags, interfaceIndex, errorCode,
                          fullname, hosttarget, port, txtRecord):
         if errorCode == pybonjour.kDNSServiceErr_NoError:
-            types = [pybonjour.kDNSServiceType_A,
-                     pybonjour.kDNSServiceType_AAAA]
-            for typ in types:
+            old_idx = sdRef.fileno()
+            for typ in self.types:
                 ref = pybonjour.DNSServiceQueryRecord(
                                               interfaceIndex = interfaceIndex,
                                               fullname = hosttarget,
                                               rrtype = typ,
                                               callBack = self.query_callback)
+                # Move this guy to a new indexing slot, we are about to be 
+                # done with this socket.  We add an index entry for each
+                # reference all pointing to the same host object because 
+                # we can't reconstruct a index on a per-host basis in 
+                # the callback.
+                idx = ref.fileno()
+                self.host[idx] = self.host[old_idx]
                 self.add_ref(ref)
 
-            self.ntypes = len(types)
-            self.typecount = 0
-            self.fullname = fullname
-            self.hosttarget = hosttarget
-            self.port = port
-            self.ips = dict()
+            # Housekeeping: delete the old index because the socket will be
+            # closed.
+            host = self.host[old_idx]
+            del self.host[old_idx]
+            host.typecount = 0
+            host.fullname = fullname
+            host.hosttarget = hosttarget
+            host.port = port
+            host.ips = dict()
 
         self.del_ref(sdRef)
         sdRef.close()
@@ -135,5 +155,6 @@ def bonjour_browse_service(regtype, callback):
     callback_obj = BonjourCallbacks(callback)
     ref = pybonjour.DNSServiceBrowse(regtype=regtype,
                                      callBack=callback_obj.browse_callback)
+    callback_obj.host = dict()
     callback_obj.add_ref(ref)
     return callback_obj
