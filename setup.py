@@ -36,6 +36,7 @@ from setuptools import setup, find_packages
 setup(
     name = 'pydaap',
     version = '20101202',
+    zip_safe = False,
     author = 'Geoffrey Lee',
     author_email = 'glee@pculture.org',
     url = 'https://git.participatoryculture.org/pydaap',
