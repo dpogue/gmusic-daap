@@ -50,7 +50,7 @@ def version(prognam):
     sys.exit(1)
 
 def usage(prognam):
-    print 'usage: %s [-vh] [[-c maxconn] [-p port] path]' % prognam
+    print 'usage: %s [-Mvh] [[-c maxconn] [-p port] path]' % prognam
     sys.exit(1)
 
 def main(argc, argv):
