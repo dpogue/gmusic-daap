@@ -46,8 +46,8 @@ class BonjourCallbacks(object):
         self.refs = []
         self.query_types = [pybonjour.kDNSServiceType_A]
         # Workaround: the Windows mDNSResponder won't give us a reply
-        # for type AAAA!  We assume it will always give us a reply, which 
-        # does not work in practice.
+        # for type AAAA!  Is it because there is no IPv6 configured?
+        # mDNSResponder should still return error in this case.
         if sys.platform != 'win32':
             self.query_types.append(pybonjour.kDNSServiceType_AAAA)
         self.nquery_types = len(self.query_types)
