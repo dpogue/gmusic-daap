@@ -59,11 +59,15 @@ def version(prognam):
 # Windows Python does not have inet_ntop.  Sigh.  Fallback to this one, which
 # isn't as good, if we do not have access to it.
 def inet_ntop(af, ip):
-    if af == socket.AF_INET:
-        return socket.inet_ntoa(ip)
-    if af == socket.AF_INET6:
-        return ':'.join('%x' % bit for bit in struct.unpack('!' + 'H' * 8, ip))
-    raise ValueError('unkonwn address family %d' % af)
+    try:
+        return socket.inet_ntop(af, ip)
+    except AttributeError:
+        if af == socket.AF_INET:
+            return socket.inet_ntoa(ip)
+        if af == socket.AF_INET6:
+            return ':'.join('%x' % bit for bit in struct.unpack('!' + 'H' * 8,
+                                                                ip))
+        raise ValueError('unkonwn address family %d' % af)
 
 def mdns_browse_callback(added, fullname, hosttarget, ips, port):
 
@@ -79,10 +83,7 @@ def mdns_browse_callback(added, fullname, hosttarget, ips, port):
             af_str = "AF_INET"
         elif af == socket.AF_INET6:
             af_str = "AF_INET6"
-        try:
-            ip_str = socket.inet_ntop(af, ip)
-        except AttributeError:
-            ip_str = inet_ntop(af, ip)
+        ip_str = inet_ntop(af, ip)
         print '    address family: %s' % af_str
         print '    ip: %s' % ip_str
     print 'port: %s' % port
