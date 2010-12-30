@@ -33,6 +33,7 @@ import pybonjour
 import select
 import socket
 import errno
+import sys
 
 # Dummy object
 class HostObject(object):
@@ -43,8 +44,12 @@ class BonjourCallbacks(object):
     def __init__(self, user_callback):
         self.user_callback = user_callback
         self.refs = []
-        self.query_types = [pybonjour.kDNSServiceType_A,
-                            pybonjour.kDNSServiceType_AAAA]
+        self.query_types = [pybonjour.kDNSServiceType_A]
+        # Workaround: the Windows mDNSResponder won't give us a reply
+        # for type AAAA!  We assume it will always give us a reply, which 
+        # does not work in practice.
+        if sys.platform != 'win32':
+            self.query_types.append(pybonjour.kDNSServiceType_AAAA)
         self.nquery_types = len(self.query_types)
 
     def add_ref(self, ref):
