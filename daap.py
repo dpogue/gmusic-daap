@@ -70,7 +70,6 @@ def inet_ntop(af, ip):
         raise ValueError('unkonwn address family %d' % af)
 
 def mdns_browse_callback(added, fullname, hosttarget, ips, port):
-
     print 'mdns_browse: '
     print 'added: %s' % added
     print 'name: %s' % fullname.encode('utf-8')
