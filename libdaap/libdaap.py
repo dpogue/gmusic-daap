@@ -591,12 +591,11 @@ def make_daap_server(backend, name='pydaap', port=DEFAULT_PORT,
             httpd = DaapTCPServer(('', port), handler)
             break
         except socket.error, e:
-            if not port == 0:
+            if robust and not port == 0:
                 port = 0
                 continue
-            else:
-                failed = True
-                break
+            failed = True
+            break
     if failed:
         return None
     
