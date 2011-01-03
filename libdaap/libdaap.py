@@ -82,7 +82,11 @@ DEFAULT_DAAP_META = ('dmap.itemkind,dmap.itemid,dmap.itemname,' +
                      'com.apple.itunes.mediakind')
 
 class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    allow_reuse_address = True    # setsockopt(... SO_REUSEADDR, 1)
+    # GRRR!  Stupid Windows!  When bind() is called twice on a socket
+    # it should return EADDRINUSE on the second one - Windows doesn't!
+    # Use robust=True (default) in make_daap_server() and it will pick 
+    # a new port.
+    # allow_reuse_address = True    # setsockopt(... SO_REUSEADDR, 1)
     session_lock = threading.Lock()
 
     # New functions in subclass.  Note: we can separate some of these out
