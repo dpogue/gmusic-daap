@@ -1,14 +1,31 @@
 Developing using libdaap
 
+How to create a daap server in 5 seconds:
+
+import libdaap
+
 Call libdaap.make_daap_server() with the backend as the argument (more on this
 later).  This returns a server instance.
 
 Call libdaap.runloop() with the server as the argument.
 
+How to create a daap client in 5 seconds:
+
+import libdaap
+
+Call libdaap.make_daap_client().  This returns a daap client instance.
+You then call connect() on the returned object to connect to a server.
+
+Bonjour sharing:
+
 You may also consider to use Bonjour sharing, you can turn this on and
-off with libdaap.install_mdns() with a sharename as an argument.  This
-function returns a reference which you can destroy with 
-libdaap.uninstall_mdns().
+off with libdaap.install_mdns().  This function returns a reference which 
+you can destroy with libdaap.uninstall_mdns().
+
+Call libdaap.browse_mdns() to have Bonjour notify you when new shares
+are published on the network.
+
+Advanced server options:
 
 NOTE: If robust=True argument is set (the default) the server creation 
 is "robust".  This means if if cannot find the port specified it will pick
@@ -18,6 +35,10 @@ always check the port returned by the server.  You can do:
 address, port = serverobj.server_address
 
 to obtain the port from the server object.
+
+An alternative way to run the server is to obtain the server's socket
+descriptor, then you work out when the socket is readable then issue
+a handle_request() method on it.
 
 There are more arguments to these functions to change the port settings
 among others, refer to the source code for help.
@@ -45,12 +66,42 @@ in get_items().
 
 get_filepath(itemid): Get the full path to the file for the itemid.
 
-For client, call libdaap.make_daap_client(host, port=xxx) to make a
-client object.  The port=xxx is optional defaults to the default daap port.
+Common errors:
 
-Call the connect() method to connect to a share, disconnect() to disconnect,
-and daap_get_file_request(file_id) to return a path you can request via
-http (recall daap is http-based).
+Server returns a HTTP 403 - this could be several errors.
 
-Call libdaap.browse_mdns(callback) to browse for daap shares and have it
-notify you via the callback when things are published or removed.
+(1) You have tried to obtain an invalid item or you have issued an invalid
+GET request that DAAP did not understand.  Many of the daap commands require
+a session id which you obtain via the /login GET request.
+
+(2) Your session has expired.  A session expires after inactivity (currently
+1800 seconds) or alternatively, your daap control connection expires.
+Typically, daap client implementations issue an initial connection to the
+server (control connection) then issue a new connection when they try
+to stream actual files (data connection).  In the case of pydaap, the
+session expires when your control connection is closed.  For this reason,
+you should keep the control connection alive even when you are streaming 
+video.  Common mistakes include using HTTP/1.0 or using a HTTP programming
+interface that adds the Connection: close headers to HTTP/1.1 connections.
+
+The reason for doing so is it's much easier to work out whether a remote
+host has gone.  For example, if a remote host connects, then does a media
+listing then closes the connection.  Is the remote host done with the
+session?  Or is the user just busy doing something else?  Destroying the
+session on socket close seems to work with the major daap implementations and 
+so this is exactly what the pydaap server implementation does.
+
+(3) Can't connect to any recent version iTunes - since iTunes version 7,
+there is a cryptographic authentication process which has not yet been 
+broken, so it's impossible to connect.  This is the same across the board
+of all the open source clients that rely on a reverse-engineered daap
+protocol implementation.
+
+You can, however, use iTunes as a client and connect to a pydaap server.
+
+(4) No password support - pydaap does not yet support this.  It may be
+supported in a future version.
+
+(5) Rhythmbox (or possibly any other GStreamer-based application) cannot
+stream from the reference daapd.py server - we think it's because 
+the reference server does not send the song duration data.

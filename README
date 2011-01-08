@@ -7,28 +7,44 @@ We do however borrow heavily from existing projects, in trying to write this
 we hope that there is a decoupling of the protocol implementation and an
 embedding application so this can be used elsewhere.
 
-To build:
+To build and install:
 
 python buildconst.py
+python setup.py install
 
-To run:
+Note: This installs the libdaap package only.
+
+The pydaap package also includes reference implementations of a server
+and client using libdaap, called daapd.py and daap.py respectively.  If you
+just want to try these programs out within the source directory there is no
+need to install libdaap on your system.
+
+To run the server:
 
 python daapd.py /path/to/share
 
-Or:
+Optional options for server:
 
-import libdaap
+-v: display version
+-h: display help
+-M: do not publish music share via Bonjour
+-c <maxconn>: set maximum client connections (default is 10)
+-p <port>: alternate port, default=3689, 0 to pick a unused port
 
-To run the example client:
+To run the client:
 
-python daap.py <ip>:<port>
+python daap.py <host>
 
-First command builds the constants used for the DAAP protocol, based on
-the forked-daapd code.
+-v: display version
+-h: display help
 
-Second command actually runs the server.  You can append a -h flag to
-get a list of supported options.  You can also import daap.py for use
-in your own application.
+note: If you need to specify a port, use <host>:<port> format.
+
+daap.py also contains a Bonjour browse, which you can invoke via:
+
+python daap.py -S
+
+This will run forever, ^C on Unix to exit.
 
 Thanks goes to the existing implementators of open source daap clients
 and servers and especially to forked-daapd of which the authors have
