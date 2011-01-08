@@ -729,6 +729,7 @@ class DaapClient(object):
                                  callback=self.handle_items,
                                  args=[k])
             # Finally, if this all works, start the heartbeat timer.
+            # XXX pick out the daap timeout from the server.
             self.timer = threading.Timer(self.HEARTBEAT,
                                          self.heartbeat_callback,
                                          [self.session])

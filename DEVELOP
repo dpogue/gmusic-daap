@@ -91,6 +91,26 @@ session?  Or is the user just busy doing something else?  Destroying the
 session on socket close seems to work with the major daap implementations and 
 so this is exactly what the pydaap server implementation does.
 
+Some implementation details: when you issue a /login request in the
+control connection, a session id is created for you centrally, within the
+HTTP server object.  This gets sent back to the client, but a reference
+to this session id is kept in the connection handle.  When you stream, 
+you initiate a new HTTP session ("data connection") with a session id 
+provided to you previously as part of the query string of the HTTP request.  
+This creates a new HTTP request handler.
+
+When a connection is either closed normally (in finish() method) or abruptly 
+terminated (as part of IOError exception handling, possibly a SIGPIPE), the 
+code deletes the session based on the session id stored in the HTTP 
+request handler.  As there is no reference to the id in the data connection,
+it is immune to getting sessions deleted.  This means clients may close
+data connections as they please (e.g. when user fast forward or skip over
+media items) without adversely affecting the session.
+
+When your control connection is terminated, the session disappears, at this
+point you cannot rely on your session working, and the server has a right
+to terminate your data connection abruptly.
+
 (3) Can't connect to any recent version iTunes - since iTunes version 7,
 there is a cryptographic authentication process which has not yet been 
 broken, so it's impossible to connect.  This is the same across the board
