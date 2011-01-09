@@ -116,7 +116,10 @@ Can't connect to any recent version iTunes.
 Since iTunes version 7, there is a cryptographic authentication process which 
 has not yet been broken, so it's impossible to connect.  This is the 
 same across the board of all the open source clients that rely on a 
-reverse-engineered daap protocol implementation.
+reverse-engineered daap protocol implementation.  There's currently no way
+to test that this is the case other than that your connection failed, but
+we may want to add support for this if there's a good way to do so that's
+not too intrusive.
 
 You can, however, use iTunes as a client and connect to a pydaap server.
 
