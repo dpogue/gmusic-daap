@@ -111,17 +111,21 @@ When your control connection is terminated, the session disappears, at this
 point you cannot rely on your session working, and the server has a right
 to terminate your data connection abruptly.
 
-(3) Can't connect to any recent version iTunes - since iTunes version 7,
-there is a cryptographic authentication process which has not yet been 
-broken, so it's impossible to connect.  This is the same across the board
-of all the open source clients that rely on a reverse-engineered daap
-protocol implementation.
+Can't connect to any recent version iTunes.
+
+Since iTunes version 7, there is a cryptographic authentication process which 
+has not yet been broken, so it's impossible to connect.  This is the 
+same across the board of all the open source clients that rely on a 
+reverse-engineered daap protocol implementation.
 
 You can, however, use iTunes as a client and connect to a pydaap server.
 
-(4) No password support - pydaap does not yet support this.  It may be
-supported in a future version.
+No password support.  
 
-(5) Rhythmbox (or possibly any other GStreamer-based application) cannot
-stream from the reference daapd.py server - we think it's because 
-the reference server does not send the song duration data.
+pydaap does not yet support this.  It may be supported in a future version.
+
+Rhythmbox (or possibly any other GStreamer-based application) cannot
+stream from the reference daapd.py server.
+
+We think it's because the reference server does not send the song duration 
+data.  You'll need to implement a backend which supports this.
