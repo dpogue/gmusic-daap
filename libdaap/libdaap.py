@@ -671,29 +671,18 @@ class DaapClient(object):
             playlist_dict[playlist_id]['base'] = playlist_base
         self.daap_playlists = playlist_dict
 
-    def handle_items(self, data, playlist_id):
+    def handle_items(self, data, playlist_id, meta):
         listing = find_daap_tag('mlcl', decode_response(data))
         itemdict = dict()
         if not listing:
             self.daap_items = dict()    # dummy empty
             return
+        meta_list = [m.strip() for m in meta.split(',')]
         for item in find_daap_listitems(listing):
-            # Pick out the tags which we care about (for now).
-            itemkind = find_daap_tag('mikd', item)
             itemid = find_daap_tag('miid', item)
-            itemname = find_daap_tag('minm', item)
-            itemduration = find_daap_tag('astm', item)
-            itemsize = find_daap_tag('assz', item)
-            itemenclosure = find_daap_tag('asfm', item)
-            file_type = find_daap_tag('aeMK', item)    # media kind
             itemdict[itemid] = dict()
-            itemdict[itemid]['id'] = itemid
-            itemdict[itemid]['kind'] = itemkind
-            itemdict[itemid]['name'] = itemname
-            itemdict[itemid]['duration'] = itemduration
-            itemdict[itemid]['size'] = itemsize
-            itemdict[itemid]['enclosure'] = itemenclosure
-            itemdict[itemid]['file_type'] = file_type
+            for m in meta_list:
+                itemdict[itemid][m] = find_daap_tag(dmap_consts_rmap[m], item)
         self.daap_items = itemdict
 
     def sessionize(self, request, query):
@@ -766,7 +755,7 @@ class DaapClient(object):
                     [('meta', meta)]))
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_items,
-                             args=[playlist_id])
+                             args=[playlist_id, meta])
             items = self.daap_items
             del self.daap_items
             return items

@@ -118,6 +118,18 @@ for line in lines:
         spacing = '#   '
     outfile.write('%s%s: (%s, %s),\n' % (spacing, code, name, typ))
 outfile.write('}\n')
+
+outfile.write('\n')
+outfile.write('dmap_consts_rmap = {\n')
+for line in lines:
+    splitline = line.split()
+    code = splitline[7].strip(',')
+    name = split = splitline[8].strip(',')
+    spacing = '    '
+    if splitline[0].startswith('//'):
+        spacing = '#   '
+    outfile.write('%s%s: %s,\n' % (spacing, name, code))
+outfile.write('}\n')
         
 outfile.close()
 sys.exit(0)

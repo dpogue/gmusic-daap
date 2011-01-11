@@ -125,12 +125,10 @@ def dump(host, kwargs):
             print "Error: can't get item for playlist %d" % k
             continue
         for k_ in items.keys():
-            print '    media kind = %s' % items[k_]['kind']
-            print '    media name = %s' % items[k_]['name']
-            print '    media duration = %s' % items[k_]['duration']
-            print '    media size = %s' % items[k_]['size']
-            print '    media enclosure = %s' % items[k_]['enclosure']
-            print '    media path = %s' % client.daap_get_file_request(k_)
+            for k__ in items[k_].keys():
+                value = items[k_][k__]
+                if value is not None:
+                    print '    %s = %s' % (k__, items[k_][k__])
 
 def main(argc, argv):
     prognam = argv[0]
