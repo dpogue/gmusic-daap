@@ -750,17 +750,20 @@ class DaapClient(object):
             self.disconnect()
             return None
 
-    def items(self, playlist_id=None):
+    # XXX: I think this could be cleaner, maybe abstract to have an
+    # easy way to provide the daap meta without resorting to providing
+    # the raw string which includes the names requested.
+    def items(self, playlist_id=None, meta=DEFAULT_DAAP_META):
         try:
             if playlist_id is None:
                 self.conn.request('GET', self.sessionize(
                     '/databases/%d/items' % self.db_id,
-                    [('meta', DEFAULT_DAAP_META)]))
+                    [('meta', meta)]))
             else:
                 self.conn.request('GET', self.sessionize(
                     ('/databases/%d/containers/%d/items' % 
                      (self.db_id, playlist_id)),
-                    [('meta', DEFAULT_DAAP_META)]))
+                    [('meta', meta)]))
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_items,
                              args=[playlist_id])
