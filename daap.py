@@ -106,19 +106,30 @@ def dump(host, kwargs):
     if not client.connect():
         print "Error: can't connect"
         return
+    if not client.databases():
+        print "Error: can't get database"
+        return
     print 'session = ', client.session
     print 'db = ', client.db_id
     print 'dbname = ', client.db_name
-    for k in client.playlists.keys():
-        print 'playlist name = %s' % client.playlists[k]['name']
-        print 'playlist count = %s' % client.playlists[k]['count']
-        print 'base playlist = %s' % client.playlists[k]['base']
-        for k_ in client.items[k].keys():
-            print '    media kind = %s' % client.items[k][k_]['kind']
-            print '    media name = %s' % client.items[k][k_]['name']
-            print '    media duration = %s' % client.items[k][k_]['duration']
-            print '    media size = %s' % client.items[k][k_]['size']
-            print '    media enclosure = %s' % client.items[k][k_]['enclosure']
+    playlists = client.playlists()
+    if playlists is None:
+       print "Error: can't get playlist"
+       return
+    for k in playlists.keys():
+        print 'playlist name = %s' % playlists[k]['name']
+        print 'playlist count = %s' % playlists[k]['count']
+        print 'base playlist = %s' % playlists[k]['base']
+        items = client.items()
+        if items is None:
+            print "Error: can't get item for playlist %d" % k
+            continue
+        for k_ in items.keys():
+            print '    media kind = %s' % items[k_]['kind']
+            print '    media name = %s' % items[k_]['name']
+            print '    media duration = %s' % items[k_]['duration']
+            print '    media size = %s' % items[k_]['size']
+            print '    media enclosure = %s' % items[k_]['enclosure']
             print '    media path = %s' % client.daap_get_file_request(k_)
 
 def main(argc, argv):

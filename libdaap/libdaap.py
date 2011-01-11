@@ -618,7 +618,6 @@ class DaapClient(object):
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.items = dict()
 
     def heartbeat_callback(self):
         try:
@@ -647,7 +646,7 @@ class DaapClient(object):
         self.session = find_daap_tag('mlid', decode_response(data))
 
     # Note: in theory there could be multiple DB but in reality there's only
-    # one.  So this takes a shortcut.
+    # one.  So this is a shortcut.
     def handle_db(self, data):
         db_list = find_daap_tag('mlcl', decode_response(data))
         # Just get the first one.
@@ -670,13 +669,13 @@ class DaapClient(object):
             playlist_dict[playlist_id]['name'] = playlist_name
             playlist_dict[playlist_id]['count'] = playlist_count
             playlist_dict[playlist_id]['base'] = playlist_base
-        self.playlists = playlist_dict
+        self.daap_playlists = playlist_dict
 
     def handle_items(self, data, playlist_id):
         listing = find_daap_tag('mlcl', decode_response(data))
         itemdict = dict()
         if not listing:
-            self.items[playlist_id] = dict()    # dummy empty
+            self.daap_items = dict()    # dummy empty
             return
         for item in find_daap_listitems(listing):
             # Pick out the tags which we care about (for now).
@@ -695,7 +694,7 @@ class DaapClient(object):
             itemdict[itemid]['size'] = itemsize
             itemdict[itemid]['enclosure'] = itemenclosure
             itemdict[itemid]['file_type'] = file_type
-        self.items[playlist_id] = itemdict
+        self.daap_items = itemdict
 
     def sessionize(self, request, query):
         new_request = request + '?session-id=%d' % self.session
@@ -714,20 +713,6 @@ class DaapClient(object):
             self.conn.request('GET', '/login')
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_login)
-            self.conn.request('GET', self.sessionize('/databases', []))
-            self.check_reply(self.conn.getresponse(),
-                             callback=self.handle_db)
-            self.conn.request('GET', self.sessionize(
-                              '/databases/%d/containers' % self.db_id, []))
-            self.check_reply(self.conn.getresponse(),
-                             callback=self.handle_playlist)
-            for k in self.playlists.keys():
-                self.conn.request('GET', self.sessionize(
-                    '/databases/%d/containers/%d/items' % (self.db_id, k),
-                    [('meta', DEFAULT_DAAP_META)]))
-                self.check_reply(self.conn.getresponse(),
-                                 callback=self.handle_items,
-                                 args=[k])
             # Finally, if this all works, start the heartbeat timer.
             # XXX pick out the daap timeout from the server.
             self.timer = threading.Timer(self.HEARTBEAT,
@@ -738,6 +723,54 @@ class DaapClient(object):
         except (IOError, ValueError):
             self.disconnect()
             return False
+
+    # XXX Right now, there is only one db_id.
+    def databases(self):
+        try:
+            self.conn.request('GET', self.sessionize('/databases', []))
+            self.check_reply(self.conn.getresponse(),
+                             callback=self.handle_db)
+            return self.db_id
+        # We've been disconnected or there was a problem?
+        except (IOError, ValueError):
+            self.disconnect()
+            return None
+
+    def playlists(self):
+        try:
+            self.conn.request('GET', self.sessionize(
+                              '/databases/%d/containers' % self.db_id, []))
+            self.check_reply(self.conn.getresponse(),
+                             callback=self.handle_playlist)
+            playlists = self.daap_playlists
+            del self.daap_playlists
+            return playlists
+        # We've been disconnected or there was a problem?
+        except (IOError, ValueError):
+            self.disconnect()
+            return None
+
+    def items(self, playlist_id=None):
+        try:
+            if playlist_id is None:
+                self.conn.request('GET', self.sessionize(
+                    '/databases/%d/items' % self.db_id,
+                    [('meta', DEFAULT_DAAP_META)]))
+            else:
+                self.conn.request('GET', self.sessionize(
+                    ('/databases/%d/containers/%d/items' % 
+                     (self.db_id, playlist_id)),
+                    [('meta', DEFAULT_DAAP_META)]))
+            self.check_reply(self.conn.getresponse(),
+                             callback=self.handle_items,
+                             args=[playlist_id])
+            items = self.daap_items
+            del self.daap_items
+            return items
+        # We've been disconnected or there was a problem?
+        except (IOError, ValueError):
+            self.disconnect()
+            return None
 
     # This actually returns the items in the playlists.  Base 'Library'
     # playlist returns everything.
@@ -753,7 +786,7 @@ class DaapClient(object):
         except (AttributeError, IOError):
             pass
 
-    def daap_get_file_request(self, file_id):
+    def daap_get_file_request(self, file_id, filetype=None):
         """daap_file_get_url(file_id) -> url
         Helper function to convert from a file id to a http request that we can
         use to download stuff.
@@ -761,10 +794,10 @@ class DaapClient(object):
         It's useful to remember that daap is just http, so you can use any http
         client you like here.
         """
-        # 1 is default playlist, so it will contain everything.
-        enclosure = self.items[1][file_id]['enclosure']
-        if not enclosure:
+        if not filetype:
             enclosure = 'mp3'    # Assume if None
+        else:
+            enclosure = filetype
         fn = '/databases/%d/items/%d.%s' % (self.db_id, file_id, enclosure)
         fn += '?session-id=%s' % self.session
         return fn
