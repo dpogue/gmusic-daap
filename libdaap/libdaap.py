@@ -786,7 +786,7 @@ class DaapClient(object):
         except (AttributeError, IOError):
             pass
 
-    def daap_get_file_request(self, file_id, filetype=None):
+    def daap_get_file_request(self, file_id, enclosure=None):
         """daap_file_get_url(file_id) -> url
         Helper function to convert from a file id to a http request that we can
         use to download stuff.
@@ -794,10 +794,8 @@ class DaapClient(object):
         It's useful to remember that daap is just http, so you can use any http
         client you like here.
         """
-        if not filetype:
+        if not enclosure:
             enclosure = 'mp3'    # Assume if None
-        else:
-            enclosure = filetype
         fn = '/databases/%d/items/%d.%s' % (self.db_id, file_id, enclosure)
         fn += '?session-id=%s' % self.session
         return fn
