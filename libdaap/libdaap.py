@@ -30,7 +30,9 @@
 # Server/Client implementation of DAAP
 
 import os
+import sys
 import random
+import traceback
 # XXX merged into urllib.urlparse in Python 3
 import urlparse
 # XXX merged into http.server in Python 3.
@@ -93,6 +95,9 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # into separate libraries but not now.
     def set_backend(self, backend):
         self.backend = backend
+
+    def set_debug(self, debug):
+        self.debug = debug
 
     def set_name(self, name):
         self.name = name
@@ -537,6 +542,11 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 extra_headers = []
         except Exception, e:
             print 'Error: Exception occurred: ' + str(e)
+            if self.server.debug:
+                (typ, value, tb) = sys.exc_info()
+                print 'Exception: ' + str(typ)
+                print 'Traceback:\n'
+                traceback.print_tb(tb)
             # XXX should we end the connection on an exception occurence?
             rcode = DAAP_BADREQUEST
             reply = []
@@ -599,7 +609,7 @@ def browse_mdns(callback):
 def runloop(daapserver):
     daapserver.serve_forever()
 
-def make_daap_server(backend, name='pydaap', port=DEFAULT_PORT,
+def make_daap_server(backend, debug=False, name='pydaap', port=DEFAULT_PORT,
                      max_conn=DAAP_MAXCONN, robust=True):
     handler = DaapHttpRequestHandler
     failed = False
@@ -615,7 +625,8 @@ def make_daap_server(backend, name='pydaap', port=DEFAULT_PORT,
             break
     if failed:
         return None
-    
+
+    httpd.set_debug(debug) 
     httpd.set_name(name)
     httpd.set_backend(backend)
     httpd.set_maxconn(max_conn)

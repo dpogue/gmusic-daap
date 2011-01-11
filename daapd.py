@@ -50,22 +50,25 @@ def version(prognam):
     sys.exit(1)
 
 def usage(prognam):
-    print 'usage: %s [-Mvh] [[-c maxconn] [-p port] path]' % prognam
+    print 'usage: %s [-dMvh] [[-c maxconn] [-p port] path]' % prognam
     sys.exit(1)
 
 def main(argc, argv):
     # Set some defaults.
     prognam = argv[0]
     use_mdns = True
+    debug = False
     kwargs = dict()
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], 'p:c:vhM')
+            opts, args = getopt.getopt(argv[1:], 'p:c:vhdM')
         except getopt.GetoptError, e:
             print str(e)
             usage(prognam)
             # NOTREACHED
         for o, a in opts:
+            if o == '-d':
+                debug = True
             if o == '-p':
                 kwargs['port'] = int(a)
             if o == '-v':
@@ -83,7 +86,9 @@ def main(argc, argv):
 
         # XXX hardcoded module for ready-to-eat server.
         backend = filebackend.Backend(args[0])
-        server = make_daap_server(backend, **kwargs)
+        if debug:
+            print 'info: debug on'
+        server = make_daap_server(backend, debug=debug, **kwargs)
         if not server:
             raise RuntimeError('Cannot instiantiate server instance')
         # In robust mode, the server can return a port that's different
