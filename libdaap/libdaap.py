@@ -430,21 +430,25 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         items = self.server.backend.get_items(playlist_id=backend_id)
         nfiles = len(items)
         itemlist = []
-
-        # NB: mikd must be the first guy in the listing, then things can come
-        # in any order.
-        # XXX no metadata to send back at the moment.
+        try:
+            meta = [m.strip() for m in query['meta'].split(',')]
+        except KeyError:
+            meta = DEFAULT_DAAP_META
+        # NB: mikd must be the first guy in the listing.
+        # GRR stupid Rhythmbox!  The meta reply must appear in order otherwise
+        # it doesn't work!
         for k in items.keys():
             itemprop = items[k]
             item = []
-            for daapconst in itemprop.keys():
-                try:
-                    code = dmap_consts_rmap[daapconst]
-                except KeyError:
-                    continue
-                if itemprop[daapconst] is not None:
-                    attribute = (code, itemprop[daapconst])
-                    item.append(attribute)
+            for m in meta:
+                if m in itemprop.keys():
+                    try:
+                        code = dmap_consts_rmap[m]
+                    except KeyError:
+                        continue
+                    if itemprop[m] is not None:
+                        attribute = (code, itemprop[m])
+                        item.append(attribute)
             itemlist.append(('mlit', [       # Listing item
                                       # item kind - seems OK to hardcode this.
                                       ('mikd', DAAP_ITEMKIND_AUDIO),
