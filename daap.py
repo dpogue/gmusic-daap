@@ -120,7 +120,7 @@ def dump(host, kwargs):
         print 'playlist name = %s' % playlists[k]['name']
         print 'playlist count = %s' % playlists[k]['count']
         print 'base playlist = %s' % playlists[k]['base']
-        items = client.items()
+        items = client.items(playlist_id=k)
         if items is None:
             print "Error: can't get item for playlist %d" % k
             continue
