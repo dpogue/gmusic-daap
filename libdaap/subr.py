@@ -95,7 +95,7 @@ class ChunkedStreamObj(object):
         if start and start < self.filesize:
             self.fileobj.seek(start)  
             self.streamsize = self.filesize - start
-            rangetext = (str(start) + '-' + str(self.filesize) + '/' + 
+            rangetext = (str(start) + '-' + str(self.filesize - 1) + '/' + 
                          str(self.filesize))
         if end and end < self.filesize and end >= start:
             self.fileobj.seek(start)  
