@@ -445,7 +445,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if itemprop[daapconst] is not None:
                     attribute = (code, itemprop[daapconst])
                     item.append(attribute)
-            print item
             itemlist.append(('mlit', [       # Listing item
                                       # item kind - seems OK to hardcode this.
                                       ('mikd', DAAP_ITEMKIND_AUDIO),
