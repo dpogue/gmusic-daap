@@ -58,14 +58,17 @@ class Backend(object):
             nam, ext = os.path.splitext(entry)
             path = os.path.join(self.path, entry)
             if os.path.isfile(os.path.join(self.path, entry)):
-                item = [('miid', c), ('minm', nam), ('asfm', ext)]
+                item = dict()
+                item['dmap.itemkind'] = c
+                item['dmap.itemname'] = nam
+                item['daap.songformat'] = ext
                 media_kind = None
                 if ext in self.audio_ext:
                     media_kind = ('aeMK', libdaap.DAAP_MEDIAKIND_AUDIO)
                 elif ext in self.video_ext:
                     media_kind = ('aeMK', libdaap.DAAP_MEDIAKIND_VIDEO)
                 if media_kind:
-                    item.append(media_kind)
+                    item['com.apple.itunes.mediakind'] = media_kind
                     self.items[c] = item
                     self.itempaths[c] = path
 

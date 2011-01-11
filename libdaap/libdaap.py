@@ -435,7 +435,17 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # in any order.
         # XXX no metadata to send back at the moment.
         for k in items.keys():
-            item = items[k]
+            itemprop = items[k]
+            item = []
+            for daapconst in itemprop.keys():
+                try:
+                    code = dmap_consts_rmap[daapconst]
+                except KeyError:
+                    continue
+                if itemprop[daapconst] is not None:
+                    attribute = (code, itemprop[daapconst])
+                    item.append(attribute)
+            print item
             itemlist.append(('mlit', [       # Listing item
                                       # item kind - seems OK to hardcode this.
                                       ('mikd', DAAP_ITEMKIND_AUDIO),
