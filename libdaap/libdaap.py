@@ -72,6 +72,7 @@ DMAP_VERSION = ((DMAP_VERSION_MAJOR << 16)|DMAP_VERSION_MINOR)
 
 DAAP_OK = 200          # Also sent with mstt
 DAAP_NOCONTENT = 204   # Acknowledged but no content to send back
+DAAP_PARTIAL_CONTENT = 206 # Partial content, if Range header included.
 DAAP_FORBIDDEN = 403   # Access denied
 DAAP_BADREQUEST = 400  # Bad URI request
 DAAP_UNAVAILABLE = 503 # We are full
@@ -184,12 +185,11 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_header('Content-type', content_type)
             self.send_header('Daap-Server', self.server_version)
             self.send_header('Content-length', str(len(blob)))
-            if blob.get_rangetext():
-                print 'sending range %s' % blob.get_rangetext()
-                self.send_header('Content-Range', blob.get_rangetext())
             # Note: we currently do not have the ability to replace or 
             # override the default headers.
             for k, v in extra_headers:
+                self.send_header(k, v)
+            for k, v in blob.get_headers():
                 self.send_header(k, v)
             self.end_headers()
             for chunk in blob:
@@ -305,6 +305,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return (DAAP_OK, reply, [])
 
     def do_stream_file(self, db_id, item_id):
+        rc = DAAP_OK
         extra_headers = []
         # NOTE: Grabbing first header only.
         # XXX debug crap
@@ -326,8 +327,9 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 seekend = atol(rangehdr[(idx + 1):])
             if seekend < seekpos:
                 seekend = 0
+            rc = DAAP_PARTIAL_CONTENT
         # Return a special response, the encode_reponse() will handle correctly
-        return (DAAP_OK, [(stream_file, seekpos, seekend)], extra_headers)
+        return (rc, [(stream_file, seekpos, seekend)], extra_headers)
 
     def do_databases(self):
         path, query = split_url_path(self.path)

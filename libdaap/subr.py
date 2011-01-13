@@ -67,6 +67,9 @@ class StreamObj(object):
     def __len__(self):
         return len(self.data)
 
+    def get_headers(self):
+        return []
+
     def get_rangetext(self):
         return ''
 
@@ -131,6 +134,12 @@ class ChunkedStreamObj(object):
 
     def __len__(self):
         return self.streamsize
+
+    def get_headers(self):
+        headers = []
+        if self.rangetext:
+            headers.append(('Content-Range', self.get_rangetext()))
+        return headers
 
     def get_rangetext(self):
         return 'bytes ' + self.rangetext if self.rangetext else ''
