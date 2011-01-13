@@ -19,10 +19,10 @@ You then call connect() on the returned object to connect to a server.
 Bonjour sharing:
 
 You may also consider to use Bonjour sharing, you can turn this on and
-off with libdaap.install_mdns().  This function returns a reference which 
-you can destroy with libdaap.uninstall_mdns().
+off with libdaap.mdns_register_service().  This function returns a reference 
+which you can destroy with libdaap.mdns_unregister_service().
 
-Call libdaap.browse_mdns() to have Bonjour notify you when new shares
+Call libdaap.mdns_browse() to have Bonjour notify you when new shares
 are published on the network.
 
 Advanced server options:

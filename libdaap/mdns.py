@@ -29,16 +29,18 @@
 # mdns.py
 #
 
-try:
-    import pybonjour
-    mdns_enabled = True
-except ImportError:
-    mdns_enabled = False
 import select
 import socket
 import errno
 import sys
 
+def mdns_init():
+    try:
+        import pybonjour
+        global pybonjour
+        return True
+    except ImportError:
+        return False   
 # Dummy object
 class HostObject(object):
     pass

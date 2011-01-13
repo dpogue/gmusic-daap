@@ -564,30 +564,29 @@ def mdns_callback(sdRef, flags, errorCode, name, regtype, domain):
     else:
         pass
 
+def mdns_init():
+    return mdns.mdns_init()
+
 # install_mdns: returns a callback object.  Call the get_refs() method
 # and pass it to select to test for readability, then invoke the object
 # directly passing a readable socket (one at a time) which will take care of
 # calling your supplied callback internally in due course.  Note: do NOT 
 # assume when select returns and you call the callback object your supplied
 # callback is called because there may be insufficient data, for example.
-def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
+def mdns_register_service(name, service='_daap._tcp', port=DEFAULT_PORT,
                  mdns_callback=mdns_callback):
-    if not mdns.mdns_enabled:
-        raise ValueError('mdns not detected')
     return mdns.bonjour_register_service(name, '_daap._tcp', port=port,
         callback=mdns_callback)
 
-def uninstall_mdns(mdns_object):
+def mdns_unregister_service(mdns_object):
     mdns_object.close()
 
-def browse_mdns(callback):
+def mdns_browse(callback):
     # This class allows us to make a callback and then do some post-processing
     # before we really pass the stuff back to the user.  We need it because
     # we need some place to stash the user callback.  Our aim isn't to return
     # exactly what's returned by the mDNSResponder API but to return what's
     # useful to us, and that means some text processing.
-    if not mdns.mdns_enabled:
-        raise ValueError('mdns not detected')
     class BrowseCallback(object):
        def __init__(self, callback):
            self.user_callback = callback
