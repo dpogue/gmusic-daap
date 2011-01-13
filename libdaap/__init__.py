@@ -26,9 +26,9 @@
 # this exception statement from your version. If you delete this exception
 # statement from all source files in the program, then also delete it here.
 
+from mdns import mdns_enabled
 from libdaap import *
 from const import *
-from mdns import mdns_enabled
 
 # TODO: import constants from pybonjour or do a portable mapping between them
 # so we can refer to it in callbacks.

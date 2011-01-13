@@ -41,7 +41,7 @@ import select
 
 # Hardcoded example backend
 import filebackend
-from libdaap import *
+import libdaap
 
 VERSION = '0.1'
 
@@ -88,7 +88,7 @@ def main(argc, argv):
         backend = filebackend.Backend(args[0])
         if debug:
             print 'info: debug on'
-        server = make_daap_server(backend, debug=debug, **kwargs)
+        server = libdaap.make_daap_server(backend, debug=debug, **kwargs)
         if not server:
             raise RuntimeError('Cannot instiantiate server instance')
         # In robust mode, the server can return a port that's different
@@ -100,7 +100,7 @@ def main(argc, argv):
         if use_mdns:
             if not libdaap.mdns_enabled:
                 print 'warning: no mdns support found on system, disabled'
-                callback = install_mdns('pydaap', **kwargs)
+                callback = libdaap.install_mdns('pydaap', **kwargs)
         while True:
             try:
                 rset = [server_fileno]
