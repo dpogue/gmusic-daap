@@ -801,10 +801,11 @@ class DaapClient(object):
     def disconnect(self):
         try:
             self.timer.cancel()
-            # We can be more polite and issue '/logout' but it's not necessary
+            self.conn.request('GET', self.sessionize('/logout', []))
+            self.check_reply(self.conn.getresponse())
             self.conn.close()
         # Don't care since we are going away anyway.
-        except (AttributeError, IOError):
+        except (httplib.ResponseNotReady, AttributeError, IOError):
             pass
 
     def daap_get_file_request(self, file_id, enclosure=None):
