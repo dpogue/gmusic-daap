@@ -100,6 +100,7 @@ def main(argc, argv):
         if use_mdns:
             if not libdaap.mdns_init():
                 print 'warning: no mdns support found on system, disabled'
+            else:
                 callback = libdaap.mdns_register_service('pydaap', **kwargs)
         while True:
             try:
