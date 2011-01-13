@@ -98,7 +98,9 @@ def main(argc, argv):
         ref = None
         server_fileno = server.fileno()
         if use_mdns:
-            callback = install_mdns('pydaap', **kwargs)
+            if not libdaap.mdns_enabled:
+                print 'warning: no mdns support found on system, disabled'
+                callback = install_mdns('pydaap', **kwargs)
         while True:
             try:
                 rset = [server_fileno]

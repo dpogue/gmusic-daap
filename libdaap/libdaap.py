@@ -572,6 +572,8 @@ def mdns_callback(sdRef, flags, errorCode, name, regtype, domain):
 # callback is called because there may be insufficient data, for example.
 def install_mdns(name, service='_daap._tcp', port=DEFAULT_PORT,
                  mdns_callback=mdns_callback):
+    if not mdns.mdns_enabled:
+        raise ValueError('mdns not detected')
     return mdns.bonjour_register_service(name, '_daap._tcp', port=port,
         callback=mdns_callback)
 
@@ -584,6 +586,8 @@ def browse_mdns(callback):
     # we need some place to stash the user callback.  Our aim isn't to return
     # exactly what's returned by the mDNSResponder API but to return what's
     # useful to us, and that means some text processing.
+    if not mdns.mdns_enabled:
+        raise ValueError('mdns not detected')
     class BrowseCallback(object):
        def __init__(self, callback):
            self.user_callback = callback

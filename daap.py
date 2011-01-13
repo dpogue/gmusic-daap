@@ -88,6 +88,8 @@ def mdns_browse_callback(added, fullname, hosttarget, ips, port):
     print 'port: %s' % port
 
 def scanmdns():
+    if not libdaap.mdns_enabled:
+        print 'error: no mdns support found on system'
     callback = libdaap.browse_mdns(mdns_browse_callback)
     while True:
         refs = callback.get_refs()

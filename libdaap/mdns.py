@@ -29,7 +29,11 @@
 # mdns.py
 #
 
-import pybonjour
+try:
+    import pybonjour
+    mdns_enabled = True
+except ImportError:
+    mdns_enabled = False
 import select
 import socket
 import errno
