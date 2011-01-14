@@ -84,7 +84,7 @@ DEFAULT_DAAP_META = ('dmap.itemkind,dmap.itemid,dmap.itemname,' +
                      'daap.songtime,daap.songsize,daap.songformat,' +
                      'com.apple.itunes.mediakind')
 DEFAULT_DAAP_PLAYLIST_META = ('dmap.itemid,dmap.itemname,dmap.persistentid,' +
-                              'dmap.itemcount,' +
+                              'daap.baseplaylist,dmap.itemcount,' +
                               'dmap.parentcontainerid,dmap.persistentid')
 
 class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
