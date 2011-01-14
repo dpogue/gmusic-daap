@@ -292,7 +292,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if not session:
            return (DAAP_FORBIDDEN, [], [])
         self.server.del_session(session)
-        return (DAAP_NOCONTENT, [], [])
+        return (DAAP_OK, [], [])
 
     # We don't support this but Rhythmbox sends this anyway.  Grr.
     def do_update(self):
@@ -831,10 +831,11 @@ class DaapClient(object):
             self.timer.cancel()
             self.conn.request('GET', self.sessionize('/logout', []))
             self.check_reply(self.conn.getresponse())
-            self.conn.close()
         # Don't care since we are going away anyway.
-        except (httplib.ResponseNotReady, AttributeError, IOError):
+        except (ValueError, httplib.ResponseNotReady, AttributeError, IOError):
             pass
+        finally:
+            self.conn.close()
 
     def daap_get_file_request(self, file_id, enclosure=None):
         """daap_file_get_url(file_id) -> url
