@@ -549,12 +549,12 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 rcode, reply, extra_headers = self.do_content_codes()
             elif self.path == '/login':
                 rcode, reply, extra_headers = self.do_login()
-            elif self.path == '/logout':
-               rcode, reply, extra_headers = self.do_logout()
-               endconn = True
             # /activity?session-id=xxxxx
             # XXX we should be splitting these so the path and the querystring
             # are separate.
+            elif self.path.startswith('/logout'):
+               rcode, reply, extra_headers = self.do_logout()
+               endconn = True
             elif self.path.startswith('/activity'):
                 rcode, reply, extra_headers = self.do_activity()
             elif self.path.startswith('/update'):
