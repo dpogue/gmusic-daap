@@ -151,7 +151,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
             # XXX can't just delete? - need to keep a reference count for the
             # connection, we can have data/control connection?
             del self.activeconn[s]
-        except ValueError:
+        except KeyError:
             pass
 
 class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
