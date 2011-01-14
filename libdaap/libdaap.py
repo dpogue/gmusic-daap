@@ -84,7 +84,8 @@ DEFAULT_DAAP_META = ('dmap.itemkind,dmap.itemid,dmap.itemname,' +
                      'daap.songtime,daap.songsize,daap.songformat,' +
                      'com.apple.itunes.mediakind')
 DEFAULT_DAAP_PLAYLIST_META = ('dmap.itemid,dmap.itemname,dmap.persistentid,' +
-                              'daap.baseplaylist')
+                              'dmap.itemcount,' +
+                              'dmap.parentcontainerid,dmap.persistentid')
 
 class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # GRRR!  Stupid Windows!  When bind() is called twice on a socket
@@ -399,13 +400,33 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                                          ]
                                )]
             playlists = self.server.backend.get_playlists()
+            playlist_list = []
+            try:
+                meta = query['meta']
+            except KeyError:
+                meta = DEFAULT_DAAP_PLAYLIST_META
+            meta_list = [m.strip() for m in meta.split(',')]
+            for k in playlists.keys():
+                playlistprop = playlists[k]
+                playlist = []
+                for m in meta_list:
+                    if m in playlistprop.keys():
+                        try:
+                            code = dmap_consts_rmap[m]
+                        except KeyError:
+                            continue
+                        if playlistprop[m] is not None:
+                            attribute = (code, playlistprop[m])
+                            playlist.append(attribute)
+                playlist_list.append(('mlit', playlist))
+                                          
             npl = 1 + len(playlists)
             reply.append(('aply', [                   # Database playlists
                                    ('mstt', DAAP_OK), # Status - OK
                                    ('muty', 0),       # Update type
                                    ('mtco', npl),     # total count
                                    ('mrco', npl),     # returned count
-                                   ('mlcl', default_playlist + playlists)
+                                   ('mlcl', default_playlist + playlist_list)
                                   ]
                         ))
         else:
@@ -440,16 +461,17 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         nfiles = len(items)
         itemlist = []
         try:
-            meta = [m.strip() for m in query['meta'].split(',')]
+            meta = query['meta']
         except KeyError:
             meta = DEFAULT_DAAP_META
+        meta_list = [m.strip() for m in meta.split(',')]
         # NB: mikd must be the first guy in the listing.
         # GRR stupid Rhythmbox!  The meta reply must appear in order otherwise
         # it doesn't work!
         for k in items.keys():
             itemprop = items[k]
             item = []
-            for m in meta:
+            for m in meta_list:
                 if m in itemprop.keys():
                     try:
                         code = dmap_consts_rmap[m]
@@ -693,8 +715,11 @@ class DaapClient(object):
             playlist_id = find_daap_tag('miid', item)
             playlist_dict[playlist_id] = dict()
             for m in meta_list:
-                playlist_dict[playlist_id][m] = find_daap_tag(
+                try:
+                    playlist_dict[playlist_id][m] = find_daap_tag(
                                                     dmap_consts_rmap[m], item)
+                except KeyError:
+                    continue
         self.daap_playlists = playlist_dict
 
     def handle_items(self, data, playlist_id, meta):
@@ -708,7 +733,11 @@ class DaapClient(object):
             itemid = find_daap_tag('miid', item)
             itemdict[itemid] = dict()
             for m in meta_list:
-                itemdict[itemid][m] = find_daap_tag(dmap_consts_rmap[m], item)
+                try:
+                    itemdict[itemid][m] = find_daap_tag(
+                                          dmap_consts_rmap[m], item)
+                except KeyError:
+                    continue
         self.daap_items = itemdict
 
     def sessionize(self, request, query):
