@@ -821,11 +821,6 @@ class DaapClient(object):
             self.disconnect()
             return None
 
-    # This actually returns the items in the playlists.  Base 'Library'
-    # playlist returns everything.
-    def get_items(self):
-        pass
-
     def disconnect(self):
         try:
             self.timer.cancel()
