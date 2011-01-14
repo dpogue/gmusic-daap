@@ -95,21 +95,21 @@ def main(argc, argv):
         # from the one we requested.
         address, port = server.server_address
         kwargs['port'] = port
-        ref = None
+        refs = []
         server_fileno = server.fileno()
         if use_mdns:
             if not libdaap.mdns_init():
                 print 'warning: no mdns support found on system, disabled'
             else:
                 callback = libdaap.mdns_register_service('pydaap', **kwargs)
+                refs = callback.get_refs()
         while True:
             try:
-                rset = [server_fileno]
-                if ref is not None:
-                    read_set.append(ref)
+                rset = [server_fileno] + refs
                 r, w, x = select.select(rset, [], [])
-                if ref in r:
-                    mdns_callback(ref)
+                for ref in refs:
+                    if ref in r:
+                        callback(ref)
                 if server_fileno in r:
                     server.handle_request()
             except select.error, (err, errstring):
