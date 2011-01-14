@@ -83,6 +83,8 @@ DEFAULT_DAAP_META = ('dmap.itemkind,dmap.itemid,dmap.itemname,' +
                      'dmap.containeritemid,dmap.parentcontainerid,' +
                      'daap.songtime,daap.songsize,daap.songformat,' +
                      'com.apple.itunes.mediakind')
+DEFAULT_DAAP_PLAYLIST_META = ('dmap.itemid,dmap.itemname,dmap.persistentid,' +
+                              'daap.baseplaylist')
 
 class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # GRRR!  Stupid Windows!  When bind() is called twice on a socket
@@ -683,21 +685,16 @@ class DaapClient(object):
         self.db_id = find_daap_tag('miid', db)
         self.db_name = find_daap_tag('minm', db)
 
-    def handle_playlist(self, data):
+    def handle_playlist(self, data, meta):
         listing = find_daap_tag('mlcl', decode_response(data))
         playlist_dict = dict()
+        meta_list = [m.strip() for m in meta.split(',')]
         for item in find_daap_listitems(listing):
-            # We only try to pick out a few salient tags for now, there could
-            # be more but we're not going to bother.
             playlist_id = find_daap_tag('miid', item)
-            playlist_name = find_daap_tag('minm', item)
-            playlist_base = True if find_daap_tag('abpl', item) else False
-            playlist_count = find_daap_tag('mimc', item)
             playlist_dict[playlist_id] = dict()
-            playlist_dict[playlist_id]['id'] = playlist_id
-            playlist_dict[playlist_id]['name'] = playlist_name
-            playlist_dict[playlist_id]['count'] = playlist_count
-            playlist_dict[playlist_id]['base'] = playlist_base
+            for m in meta_list:
+                playlist_dict[playlist_id][m] = find_daap_tag(
+                                                    dmap_consts_rmap[m], item)
         self.daap_playlists = playlist_dict
 
     def handle_items(self, data, playlist_id, meta):
@@ -754,12 +751,14 @@ class DaapClient(object):
             self.disconnect()
             return None
 
-    def playlists(self):
+    def playlists(self, meta=DEFAULT_DAAP_PLAYLIST_META):
         try:
             self.conn.request('GET', self.sessionize(
-                              '/databases/%d/containers' % self.db_id, []))
+                              '/databases/%d/containers' % self.db_id,
+                              [('meta', meta)]))
             self.check_reply(self.conn.getresponse(),
-                             callback=self.handle_playlist)
+                             callback=self.handle_playlist,
+                             args=[meta])
             playlists = self.daap_playlists
             del self.daap_playlists
             return playlists
