@@ -73,7 +73,7 @@ class Backend(object):
                     self.itempaths[c] = path
 
     def get_playlists(self):
-        return []
+        return dict()
 
     def get_items(self, playlist_id=None):
         return self.items
