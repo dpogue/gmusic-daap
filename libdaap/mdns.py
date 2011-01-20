@@ -39,8 +39,10 @@ def mdns_init():
         import pybonjour
         global pybonjour
         return True
-    except ImportError:
-        return False   
+    except (ImportError, OSError):
+        return False
+    except WindowsError:
+        return False
 # Dummy object
 class HostObject(object):
     pass
