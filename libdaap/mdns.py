@@ -93,6 +93,7 @@ class BonjourCallbacks(object):
         if (flags & pybonjour.kDNSServiceFlagsAdd):
             host = HostObject()
             host.added = True
+            host.fullname = serviceName
             ref = pybonjour.DNSServiceResolve(0,
                                               interfaceIndex,
                                               serviceName,
@@ -155,7 +156,6 @@ class BonjourCallbacks(object):
             host = self.host[old_idx]
             del self.host[old_idx]
             host.typecount = 0
-            host.fullname = fullname
             host.hosttarget = hosttarget
             host.port = port
             host.ips = dict()
