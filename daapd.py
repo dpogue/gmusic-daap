@@ -53,6 +53,9 @@ def usage(prognam):
     print 'usage: %s [-dMvh] [[-c maxconn] [-p port] path]' % prognam
     sys.exit(1)
 
+def mdns_register_callback(name):
+    pass
+
 def main(argc, argv):
     # Set some defaults.
     prognam = argv[0]
@@ -101,7 +104,9 @@ def main(argc, argv):
             if not libdaap.mdns_init():
                 print 'warning: no mdns support found on system, disabled'
             else:
-                callback = libdaap.mdns_register_service('pydaap', **kwargs)
+                callback = libdaap.mdns_register_service('pydaap',
+                                                         mdns_register_callback,
+                                                         **kwargs)
                 refs = callback.get_refs()
         while True:
             try:
