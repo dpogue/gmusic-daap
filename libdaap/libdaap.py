@@ -317,8 +317,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             print 'Header %s value %s' % (k, repr(self.headers.getheader(k)))
         # XXX backend API is broken FIXME  API should return a handle to the
         # open file.
-        stream_file = self.server.backend.get_filepath(item_id)
-        print 'streaming %s' % stream_file
         seekpos = seekend = 0
         rangehdr = self.headers.getheader('Range')
         if rangehdr:
@@ -331,8 +329,10 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if seekend < seekpos:
                 seekend = 0
             rc = DAAP_PARTIAL_CONTENT
+        fildes = self.server.backend.get_file(item_id, offset=seekpos)
+        print 'streaming with file descriptor %d' % fildes
         # Return a special response, the encode_reponse() will handle correctly
-        return (rc, [(stream_file, seekpos, seekend)], extra_headers)
+        return (rc, [(fildes, seekpos, seekend)], extra_headers)
 
     def do_databases(self):
         path, query = split_url_path(self.path)
