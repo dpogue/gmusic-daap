@@ -64,7 +64,13 @@ source code for the default 'Library' playlist on how to build one.  If you
 implement this you must also implement the optional playlist_id argument
 in get_items().
 
-get_filepath(itemid): Get the full path to the file for the itemid.
+get_file(itemid, typ, offset): Get the file descriptor for the given itemid, 
+with the given offset that is arbitrarily interpreted given by 'typ'.  
+Supported types are currently "seconds", or "bytes" (standard HTTP 1.1).
+For seconds, the format is given by: "Range: seconds=XX" where XX is
+seconds from the start of the media.  The seconds extension is to allow
+for transcoding, where the media file size is not known in advance so you
+cannot use partial content to request an offset into a file.
 
 Common errors:
 
