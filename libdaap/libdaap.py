@@ -308,7 +308,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         reply.append(('mupd', [('mstt', DAAP_OK), ('musr', xxx_revision)]))
         return (DAAP_OK, reply, [])
 
-    def do_stream_file(self, db_id, item_id):
+    def do_stream_file(self, db_id, item_id, ext):
         rc = DAAP_OK
         extra_headers = []
         # NOTE: Grabbing first header only.
@@ -324,7 +324,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if rangehdr:
             bytes = 'bytes='
             if rangehdr.startswith(bytes):
-                typ = 'bytes'
                 seekpos = atol(rangehdr[len(bytes):])
                 idx = rangehdr.find('-')
                 if idx >= 0:
@@ -332,7 +331,8 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if seekend < seekpos:
                     seekend = 0
                 rc = DAAP_PARTIAL_CONTENT
-        fildes = self.server.backend.get_file(item_id, typ, offset=seekpos)
+        fildes = self.server.backend.get_file(item_id, ext, self.get_session(),
+                                              offset=seekpos)
         if fildes < 0:
             return (DAAP_FILENOTFOUND, [], extra_headers)
         print 'streaming with file descriptor %d' % fildes
@@ -515,7 +515,9 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # junk at the end.
             item_id = atoi(path[3])
             print 'now playing item %d' % item_id
-            return self.do_stream_file(db_id, item_id)
+            name, ext = os.path.splitext(path[3])
+            ext = ext[1:]
+            return self.do_stream_file(db_id, item_id, ext)
         
     def do_database_groups(self, path, query):
         db_id = int(path[1])

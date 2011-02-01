@@ -78,9 +78,7 @@ class Backend(object):
     def get_items(self, playlist_id=None):
         return self.items
 
-    def get_file(self, itemid, typ, offset=0):
-        if offset and typ != 'bytes':
-            return -1
+    def get_file(self, itemid, ext, session, offset=0):
         fildes = os.open(self.itempaths[itemid], os.O_RDONLY)
         os.lseek(fildes, offset, os.SEEK_SET)
         return fildes
