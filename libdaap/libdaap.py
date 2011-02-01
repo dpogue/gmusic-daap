@@ -188,7 +188,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_header('Content-type', content_type)
             self.send_header('Daap-Server', self.server_version)
             self.send_header('Content-length', str(len(blob)))
-            self.send_header('Accept-Ranges', 'bytes, seconds')
             # Note: we currently do not have the ability to replace or 
             # Note: we currently do not have the ability to replace or 
             # override the default headers.
@@ -324,7 +323,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         typ = ''
         if rangehdr:
             bytes = 'bytes='
-            seconds = 'seconds='
             if rangehdr.startswith(bytes):
                 typ = 'bytes'
                 seekpos = atol(rangehdr[len(bytes):])
@@ -333,10 +331,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     seekend = atol(rangehdr[(idx + 1):])
                 if seekend < seekpos:
                     seekend = 0
-            elif rangehdr.startswith(seconds):
-                typ = 'seconds'
-                seekpos = atol(rangehdr[len(seconds):])
-            rc = DAAP_PARTIAL_CONTENT
+                rc = DAAP_PARTIAL_CONTENT
         fildes = self.server.backend.get_file(item_id, typ, offset=seekpos)
         if fildes < 0:
             return (DAAP_FILENOTFOUND, [], extra_headers)
