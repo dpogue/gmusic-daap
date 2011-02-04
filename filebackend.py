@@ -78,7 +78,8 @@ class Backend(object):
     def get_items(self, playlist_id=None):
         return self.items
 
-    def get_file(self, itemid, ext, session, offset=0):
+    def get_file(self, itemid, ext, session, request_path_func, offset=0,
+                 chunk=None):
         fildes = os.open(self.itempaths[itemid], os.O_RDONLY)
         os.lseek(fildes, offset, os.SEEK_SET)
         return fildes
