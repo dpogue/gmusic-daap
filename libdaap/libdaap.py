@@ -698,6 +698,11 @@ class DaapClient(object):
         self.port = port
         self.session = None
 
+    def alive(self):
+        self.timer.cancel()
+        self.heartbeat_callback()
+        return self.session is not None
+
     def heartbeat_callback(self):
         try:
             self.conn.request('GET', self.sessionize('/activity', []))
