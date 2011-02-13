@@ -69,23 +69,12 @@ def inet_ntop(af, ip):
                                                                 ip))
         raise ValueError('unkonwn address family %d' % af)
 
-def mdns_browse_callback(added, fullname, hosttarget, ips, port):
+def mdns_browse_callback(added, fullname, hosttarget, port):
     print 'mdns_browse: '
     print 'added: %s' % added
     print 'name: %s' % fullname.encode('utf-8')
     if added:
         print 'host: %s' % hosttarget.encode('utf-8')
-        print 'possible addresses:'
-        for af in ips.keys():
-            ip = ips[af]
-            af_str = "(unknown)"
-            if af == socket.AF_INET:
-                af_str = "AF_INET"
-            elif af == socket.AF_INET6:
-                af_str = "AF_INET6"
-            ip_str = inet_ntop(af, ip)
-            print '    address family: %s' % af_str
-            print '    ip: %s' % ip_str
         print 'port: %s' % port
 
 def scanmdns():
