@@ -80,6 +80,6 @@ class Backend(object):
 
     def get_file(self, itemid, ext, session, request_path_func, offset=0,
                  chunk=None):
-        fildes = os.open(self.itempaths[itemid], os.O_RDONLY)
-        os.lseek(fildes, offset, os.SEEK_SET)
-        return fildes
+        file_obj = open(self.itempaths[itemid], 'rb')
+        file_obj.seek(offset, os.SEEK_SET)
+        return file_obj
