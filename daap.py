@@ -122,6 +122,7 @@ def dump(host, kwargs):
                 value = items[k_][k__]
                 if value is not None:
                     print '    %s = %s' % (k__, items[k_][k__])
+    client.disconnect()
 
 def main(argc, argv):
     prognam = argv[0]
