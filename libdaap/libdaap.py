@@ -96,6 +96,13 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # allow_reuse_address = True    # setsockopt(... SO_REUSEADDR, 1)
     session_lock = threading.Lock()
 
+    def __init__(self, server_address, RequestHandlerClass,
+                 bind_and_activate=True):
+        SocketServer.TCPServer.__init__(self, server_address,
+                                        RequestHandlerClass,
+                                        bind_and_activate)
+        self.debug = False
+
     # New functions in subclass.  Note: we can separate some of these out
     # into separate libraries but not now.
     def set_backend(self, backend):
