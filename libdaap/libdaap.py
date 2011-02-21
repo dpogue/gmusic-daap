@@ -181,7 +181,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         if self.server.log_message_func:
-            self.server.log_message_func
+            self.server.log_message_func(format, *args)
 
     def finish(self):
         try:
