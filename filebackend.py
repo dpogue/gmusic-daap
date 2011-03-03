@@ -78,8 +78,8 @@ class Backend(object):
     def get_items(self, playlist_id=None):
         return self.items
 
-    def get_file(self, itemid, ext, session, request_path_func, offset=0,
-                 chunk=None):
+    def get_file(self, itemid, generation, ext, session, request_path_func,
+                 offset=0, chunk=None):
         file_obj = open(self.itempaths[itemid], 'rb')
         file_obj.seek(offset, os.SEEK_SET)
         return file_obj
