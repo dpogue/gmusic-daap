@@ -42,7 +42,7 @@ from itertools import count
 import libdaap
 
 audio_ext = ['.mp3']
-video_ext = ['.mp4']
+video_ext = ['.mp4', '.mkv']
 
 class Backend(object):
     def __init__(self, path, audio_ext=audio_ext, video_ext=video_ext):
@@ -61,7 +61,7 @@ class Backend(object):
                 item = dict()
                 item['dmap.itemid'] = c
                 item['dmap.itemname'] = nam
-                item['daap.songformat'] = ext
+                item['daap.songformat'] = ext[1:]
                 media_kind = None
                 if ext in self.audio_ext:
                     media_kind = libdaap.DAAP_MEDIAKIND_AUDIO

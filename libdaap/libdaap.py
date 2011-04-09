@@ -29,6 +29,7 @@
 # libdaap.py
 # Server/Client implementation of DAAP
 
+import errno
 import os
 import sys
 import itertools
@@ -42,7 +43,6 @@ import BaseHTTPServer
 import SocketServer
 import threading
 import httplib
-import socket
 
 # Where do I get this guy in Python?
 # NB: equivalent to INT32_MAX.
@@ -109,6 +109,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         SocketServer.TCPServer.__init__(self, server_address,
                                         RequestHandlerClass,
                                         bind_and_activate)
+        self.finished_callback = None
         self.session_lock = threading.Lock()
         self.debug = False
         self.log_message_callback = None
@@ -117,6 +118,9 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # into separate libraries but not now.
     def set_backend(self, backend):
         self.backend = backend
+
+    def set_finished_callback(self, callback):
+        self.finished_callback = callback
 
     def set_log_message_callback(self, callback):
         self.log_message_callback = callback
@@ -133,6 +137,7 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
     def daap_timeout_callback(self, s):
         self.del_session(s)
+        self.finished_callback(s)
 
     def session_count(self):
         return len(self.activeconn)
@@ -204,6 +209,8 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def finish(self):
         try:
             self.server.del_session(self.session)
+            if self.server.finished_callback:
+                self.server.finished_callback(self.session)
             self.log_message('finish called on session %d.  Bye ...',
                              self.session)
         except AttributeError:
@@ -495,10 +502,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     # XXX TODO: a lot of junk we want to do here:
     # sort-headers - seems to be like asking the server to sort something
-    # metadata - no support for this at the moment either.  Pretend we don't
-    #            have any!!
     # type=xxx - not parsed yet.  I don't think it's actually used (?)
-    # transcoding - nupe, no support yet.
     # try to invoke any of this the server will go BOH BOH!!!! no support!!!
     def do_itemlist(self, path, query, playlist_id=None):
         # Library playlist?
@@ -740,14 +744,30 @@ def make_daap_server(backend, debug=False, name='pydaap', port=DEFAULT_PORT,
 class DaapClient(object):
     HEARTBEAT = 60    # seconds
     def __init__(self, host, port):
+        self.conn = None
         self.host = host
         self.port = port
         self.session = None
 
+    # Caveat emptor when using it.
+    # if (test) { do_something(); } is NOT SAFE generally!
     def alive(self):
-        self.timer.cancel()
-        self.heartbeat_callback()
-        return self.session is not None
+        # XXX dodgy: pokes into the sock of HTTPConnection but we have no
+        # choice.
+        if not self.conn or not self.conn.sock:
+            return False
+        sock = self.conn.sock
+        buf = sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVLOWAT)
+        while True:
+            try:
+                data = sock.recv(buf, socket.MSG_PEEK)
+            except socket.error, (err, errstring):
+                if err == errno.EAGAIN:
+                    return True
+                # Anything else we treat as a connection failure.
+                if err in (errno.EINTR, errno.ENOBUFS):
+                    continue
+                return False
 
     def heartbeat_callback(self):
         try:
@@ -849,8 +869,11 @@ class DaapClient(object):
             self.timer.start()
             return True
         # We've been disconnected or there was a problem?
-        except (httplib.BadStatusLine, socket.error, IOError, ValueError):
+        except (socket.error, IOError, ValueError):
             self.disconnect()
+            return False
+        except httplib.BadStatusLine:
+            self.disconnect(polite=False)
             return False
 
     # XXX Right now, there is only one db_id.
@@ -861,8 +884,11 @@ class DaapClient(object):
                              callback=self.handle_db)
             return self.db_id
         # We've been disconnected or there was a problem?
-        except (httplib.BadStatusLine, socket.error, IOError, ValueError):
+        except (socket.error, IOError, ValueError):
             self.disconnect()
+            return None
+        except httplib.BadStatusLine:
+            self.disconnect(polite=False)
             return None
 
     def playlists(self, meta=DEFAULT_DAAP_PLAYLIST_META):
@@ -877,8 +903,11 @@ class DaapClient(object):
             del self.daap_playlists
             return playlists
         # We've been disconnected or there was a problem?
-        except (httplib.BadStatusLine, socket.error, IOError, ValueError):
+        except (socket.error, IOError, ValueError):
             self.disconnect()
+            return None
+        except httplib.BadStatusLine:
+            self.disconnect(polite=False)
             return None
 
     # XXX: I think this could be cleaner, maybe abstract to have an
@@ -902,14 +931,22 @@ class DaapClient(object):
             del self.daap_items
             return items
         # We've been disconnected or there was a problem?
-        except (httplib.BadStatusLine, socket.error, IOError, ValueError):
+        except (socket.error, IOError, ValueError):
+            typ, value, tb = sys.exc_info()
+            print 'items: typ = %s value = %s' % (str(typ), str(value))
+            for line in traceback.format_tb(tb):
+                print line
             self.disconnect()
             return None
+        except httplib.BadStatusLine:
+            self.disconnect(polite=False)
+            return None
 
-    def disconnect(self):
+    def disconnect(self, polite=True):
         try:
             self.timer.cancel()
-            self.conn.request('GET', self.sessionize('/logout', []))
+            if polite:
+                self.conn.request('GET', self.sessionize('/logout', []))
         # Don't care since we are going away anyway.
         except (socket.error, ValueError, httplib.ResponseNotReady,
                 httplib.BadStatusLine, AttributeError, IOError):
@@ -917,6 +954,7 @@ class DaapClient(object):
         finally:
             self.session = None
             self.conn.close()
+            self.conn = None
 
     def daap_get_file_request(self, file_id, enclosure=None):
         """daap_file_get_url(file_id) -> url
