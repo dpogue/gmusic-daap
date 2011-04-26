@@ -749,26 +749,6 @@ class DaapClient(object):
         self.port = port
         self.session = None
 
-    # Caveat emptor when using it.
-    # if (test) { do_something(); } is NOT SAFE generally!
-    def alive(self):
-        # XXX dodgy: pokes into the sock of HTTPConnection but we have no
-        # choice.
-        if not self.conn or not self.conn.sock:
-            return False
-        sock = self.conn.sock
-        buf = sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVLOWAT)
-        while True:
-            try:
-                data = sock.recv(buf, socket.MSG_PEEK)
-            except socket.error, (err, errstring):
-                if err == errno.EAGAIN:
-                    return True
-                # Anything else we treat as a connection failure.
-                if err in (errno.EINTR, errno.ENOBUFS):
-                    continue
-                return False
-
     def heartbeat_callback(self):
         try:
             # NB: This is a third connection in addition to the control
@@ -789,7 +769,8 @@ class DaapClient(object):
     def check_reply(self, response, http_code=httplib.OK, callback=None,
                     args=[]):
         if response.status != http_code:
-            raise ValueError('Unexpected response code %d' % http_code)
+            raise ValueError(
+                'Unexpected code %d, wanted %d' % (response.status, http_code))
         if response.version != 11:
             raise ValueError('Server did not return HTTP/1.1')
         # XXX Broken - don't do an unbounded read here, this is stupid,
@@ -952,6 +933,8 @@ class DaapClient(object):
                 httplib.BadStatusLine, AttributeError, IOError):
             pass
         finally:
+            # self.conn may be invalid at this point but that's okay, finally
+            # block doesn't raise exception but just prints it out.
             self.session = None
             self.conn.close()
             self.conn = None
@@ -972,3 +955,7 @@ class DaapClient(object):
 
 def make_daap_client(host, port=DEFAULT_PORT):
     return DaapClient(host, port)
+
+def register_meta(meta, code, typ):
+    dmap_consts[code] = (meta, typ)
+    dmap_consts_rmap[meta] = code
