@@ -34,17 +34,12 @@ import socket
 import errno
 import sys
 
-try:
-    WindowsError
-except NameError:
-    WindowsError = OSError
-
 def mdns_init():
     try:
         import pybonjour
         global pybonjour
         return True
-    except (ImportError, OSError, WindowsError):
+    except (ImportError, OSError):
         return False
 # Dummy object
 class HostObject(object):
