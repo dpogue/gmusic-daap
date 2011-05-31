@@ -43,6 +43,17 @@ a handle_request() method on it.
 There are more arguments to these functions to change the port settings
 among others, refer to the source code for help.
 
+Security considerations:
+
+When things are in string format, the data can be free-form.  In particular,
+it can include the NUL character, because the length is encoded into the
+message.  Therefore, when you access strings received from the user, you should
+be aware that while the things may be encoded into the Python 'str' type,
+NUL characters may appear anywhere within the data.  It is advisable to strip
+it out when you know you won't need it (which is most of the cases).  Pydaap
+does not strip this out for you, in case that the server may decide to send
+NUL characters, though in practice this is almost always an error.
+
 Notes on backend:
 
 The backend is basically a object-based class that can get item information
