@@ -65,7 +65,10 @@ class BonjourCallbacks(object):
             ref.close()
 
     def __call__(self, ref):
-        pybonjour.DNSServiceProcessResult(ref)
+        try:
+            pybonjour.DNSServiceProcessResult(ref)
+        except pybonjour.BonjourError, e:
+            logging.debug('BonjourCallback __call__: %s', str(e))
 
     def register_callback(self, sdRef, flags, errorCode, name, regtype,
                                domain):
@@ -82,14 +85,17 @@ class BonjourCallbacks(object):
             host = HostObject()
             host.added = True
             host.servicename = serviceName
-            ref = pybonjour.DNSServiceResolve(0,
-                                              interfaceIndex,
-                                              serviceName,
-                                              regtype,
-                                              replyDomain,
-                                              self.resolve_callback)
-            self.host[ref.fileno()] = host
-            self.add_ref(ref)
+            try:
+                ref = pybonjour.DNSServiceResolve(0,
+                                                  interfaceIndex,
+                                                  serviceName,
+                                                  regtype,
+                                                  replyDomain,
+                                                  self.resolve_callback)
+                self.host[ref.fileno()] = host
+                self.add_ref(ref)
+            except pybonjour.BonjourError, e:
+                logging.debug('browse_callback: %s', str(e))
         else:
             # Avahi won't let us query if the share is being deleted ... bah.
             self.user_callback(False,
@@ -119,7 +125,8 @@ def bonjour_register_service(name, regtype, port, callback):
                                        callBack=callback_obj.register_callback)
         callback_obj.add_ref(ref)
         return callback_obj
-    except pybonjour.BonjourError:
+    except pybonjour.BonjourError, e:
+        logging.debug('bonjour_register_service: %s', str(e))
         return None
 
 def bonjour_browse_service(regtype, callback):
@@ -130,5 +137,6 @@ def bonjour_browse_service(regtype, callback):
         callback_obj.host = dict()
         callback_obj.add_ref(ref)
         return callback_obj
-    except pybonjour.BonjourError:
+    except pybonjour.BonjourError, e:
+        logging.debug('bonjour_browse_service: %s', str(e))
         return None
