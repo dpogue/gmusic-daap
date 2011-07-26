@@ -82,4 +82,4 @@ class Backend(object):
                  offset=0, chunk=None):
         file_obj = open(self.itempaths[itemid], 'rb')
         file_obj.seek(offset, os.SEEK_SET)
-        return file_obj
+        return file_obj, self.itempaths[itemid]
