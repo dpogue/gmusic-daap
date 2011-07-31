@@ -43,6 +43,11 @@ import BaseHTTPServer
 import SocketServer
 import threading
 import httplib
+import gzip
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 # Where do I get this guy in Python?
 # NB: equivalent to INT32_MAX.
@@ -785,11 +790,15 @@ def make_daap_server(backend, debug=False, name='pydaap', port=DEFAULT_PORT,
 # HTTP/1.1.
 class DaapClient(object):
     HEARTBEAT = 60    # seconds
-    def __init__(self, host, port):
+    def __init__(self, host, port, gzip=False):
         self.conn = None
         self.host = host
         self.port = port
+        self.gzip = gzip
         self.session = None
+        self.headers = dict()
+        if self.gzip:
+           self.headers['Accept-encoding'] = 'gzip, identity'
 
     def heartbeat_callback(self):
         try:
@@ -818,6 +827,9 @@ class DaapClient(object):
         # XXX Broken - don't do an unbounded read here, this is stupid,
         # server can crash the client
         data = response.read()
+        encoding = response.getheader('Content-encoding')
+        if encoding is not None and encoding.strip() == 'gzip':
+            data = gzip.GzipFile(fileobj=StringIO(data)).read()
         if callback:
             callback(data, *args)
 
@@ -878,11 +890,11 @@ class DaapClient(object):
     def connect(self):
         try:
             self.conn = httplib.HTTPConnection(self.host, self.port)
-            self.conn.request('GET', '/server-info')
+            self.conn.request('GET', '/server-info', headers=self.headers)
             self.check_reply(self.conn.getresponse())            
-            self.conn.request('GET', '/content-codes')
+            self.conn.request('GET', '/content-codes', headers=self.headers)
             self.check_reply(self.conn.getresponse())
-            self.conn.request('GET', '/login')
+            self.conn.request('GET', '/login', headers=self.headers)
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_login)
             # Finally, if this all works, start the heartbeat timer.
@@ -902,7 +914,8 @@ class DaapClient(object):
     # XXX Right now, there is only one db_id.
     def databases(self):
         try:
-            self.conn.request('GET', self.sessionize('/databases', []))
+            self.conn.request('GET', self.sessionize('/databases', []),
+                              headers=self.headers)
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_db)
             return self.db_id
@@ -918,7 +931,7 @@ class DaapClient(object):
         try:
             self.conn.request('GET', self.sessionize(
                               '/databases/%d/containers' % self.db_id,
-                              [('meta', meta)]))
+                              [('meta', meta)]), headers=self.headers)
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_playlist,
                              args=[meta])
@@ -941,12 +954,12 @@ class DaapClient(object):
             if playlist_id is None:
                 self.conn.request('GET', self.sessionize(
                     '/databases/%d/items' % self.db_id,
-                    [('meta', meta)]))
+                    [('meta', meta)]), headers=self.headers)
             else:
                 self.conn.request('GET', self.sessionize(
                     ('/databases/%d/containers/%d/items' % 
                      (self.db_id, playlist_id)),
-                    [('meta', meta)]))
+                    [('meta', meta)]), headers=self.headers)
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_items,
                              args=[playlist_id, meta])
@@ -996,8 +1009,8 @@ class DaapClient(object):
         fn += '?session-id=%s' % self.session
         return fn
 
-def make_daap_client(host, port=DEFAULT_PORT):
-    return DaapClient(host, port)
+def make_daap_client(host, port=DEFAULT_PORT, gzip=True):
+    return DaapClient(host, port, gzip=gzip)
 
 def register_meta(meta, code, typ):
     dmap_consts[code] = (meta, typ)
