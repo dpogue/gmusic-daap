@@ -1,5 +1,11 @@
 Developing using libdaap
 
+How does it all fit in?
+
+Have a look at daapd.py and daap.py, a reference implementation of
+the server and client respectively, to get started.  It does not support
+or take advantage of all the advanced features of libdaap however.
+
 How to create a daap server in 5 seconds:
 
 import libdaap
@@ -54,34 +60,142 @@ it out when you know you won't need it (which is most of the cases).  Pydaap
 does not strip this out for you, in case that the server may decide to send
 NUL characters, though in practice this is almost always an error.
 
-Notes on backend:
+Backend API reference
 
 The backend is basically a object-based class that can get item information
 from whatever backing store is used.
 
-You must implement these functions:
+You MUST implement the following functions in order to have a minimal
+functional backend: get_revision(), get_items(), get_file(), and get_playlists().
 
-get_items(): This gets a listing of the items in "native" format that
-the server frontend expects.  In the case of libdaap, this is a
-dictionary indexed by a numeric identifier (which must be > 0), and
-tuples of daap/dmap codes and their corresponding values.  If you implement
-playlist support you must also implement the playlist_id argument which only
-returns items for a particular playlist.
+What follows below is a full list of implementable functions.
 
-get_playlists(): This can be stubbed out to return an empty list: [].  If
-you don't then you must return the playlists in native libdaap format which
-is a list of (mlit, [...]) listing of playlist items.  Refer to the libdaap
-source code for the default 'Library' playlist on how to build one.  If you
-implement this you must also implement the optional playlist_id argument
-in get_items().
+get_revision(session, old_revision)
 
-get_file(itemid, typ, offset): Get the file descriptor for the given itemid, 
-with the given offset that is arbitrarily interpreted given by 'typ'.  
-Supported types are currently "seconds", or "bytes" (standard HTTP 1.1).
-For seconds, the format is given by: "Range: seconds=XX" where XX is
-seconds from the start of the media.  The seconds extension is to allow
-for transcoding, where the media file size is not known in advance so you
-cannot use partial content to request an offset into a file.
+Gets the current revision number of the database.  This allows you to implement
+do "push" notifications of updates to clients.  The old_revision is what
+the client the revision of the database the client has.  If the current
+version of the database on the server is the same as the client, this function
+blocks the calling thread.  Otherwise, this function returns with the
+current version of the database.
+
+If you do not intend to support push notifications, then, on the first
+invocation of get_revision(), you should return old_revision + 1.  On
+subsequent invocations, you should block the calling thread forever until
+the session is finished.
+
+See the section "Implementing push notifications" for more information on how
+this is used.
+
+get_items(playlist_id=None)
+
+Returns an item listing of available items.  This is a dictionary of items that
+is indexed by a numeric item identifier that is > 0.
+
+The items themselves are also dictionaries, which contain a key/value 
+mapping where the key is a certain daap property (e.g. key = dmap.itemid,
+value = 12345).  Your items must also support 2 special keys, 'revision' and
+'valid'.  This is used to implement push notifications.  If you do not intend
+to support this, set valid=True and revision to be the revision you returned
+to the client on first invocation of get_revision().  See the section 
+"Implementing push notifications" on what you must do to support this.
+
+If your backend has playlist support, then you must also implement the
+playlist_id argument.  When the playlist_id argument is None, return
+all available items.  Otherwise, returns items for the specified playlist_id.
+
+get_playlists()
+
+If your backend does not implement playlist suport, you should return an
+empty dictionary.
+
+If your backend has playlist support, you should return a dictionary mapping
+of available playlists, indexed by a numeric playlist identifier that is > 2.
+
+The playlists themselves are also dictionaries, which contain a key/value
+mapping where the key is a certain daap property (e.g. key = dmap.itemid,
+value = 12345).  Your playlists must also support 2 special keys, 'revision' 
+and 'valid'.  This is used to implement push notifications.  If you do not 
+intend to support this, set valid=True and revision to be the revision you 
+returned to the client on first invocation of get_revision().  See the section 
+"Implementing push notifications" on what you must do to support this.
+
+get_file(itemid, generation, ext, session, request_path_func,
+         offset=0, chunk=None)
+
+Return the Python file object for the given itemid.  The function also
+provides extra information that allows you to do certain transformations on the
+file or housekeeping before you pass it back off to the daap server to
+send to the client.  At a minimum, you will need to make use of the itemid
+(so you can send back the correct item).
+
+itemid refers to the numeric item identifier requested.
+
+generation refers to the request generation which is increased every time a
+fresh request is received from the client.  It allows you to impose ordering
+on the servicing of requests.  This generation is strictly monotonic increasing
+for a particular login session, but not across different login sessions.
+
+ext provides the extension requested in the item request.  It allows you to
+arbitrary interpretation on what data needs to be sent back.  Usually, it
+will be something like 'mp3', 'mp4', etc.
+
+session provides the session id for the particular login session associated
+with this file request.
+
+request_path_func provides a function of the form:
+
+    get_request_path(itemid, enclosure)
+
+Which allows you to build an request string for the given itemid.
+
+offset provides the offset into the file that you are requesting, which
+allows you to implement range support.
+
+chunk returns a numeric identifier passed to the server in the chunk= 
+query string.
+
+request_path_func, chunk, ext, generation and session parameters provide
+a way to do fairly arbitrary manipulation and transformation of data.  For
+example, it may be used to build a m3u8 playlist on the fly, build
+mp4 live streaming segmented chunks on the fly for transcoding support.
+
+Implementing push notifications:
+
+Push notifications requires both server and client support.  This is the 
+sequence of events that you should follow:
+
+Client: check for msup in the content codes reply during login.  If present
+then server is indcating there is server support for push notifications.
+
+Client: Send an update request with revision-number query string set to 1.
+
+Server: Your get_revision() implementation should respond immediately
+with a revision > 1.  This helps the client request the initial revision
+from the server.
+
+During playlist (container) and item requests, the client may send
+revision-number=xxx and delta=xxx in the query string.  Revision-number
+indicates the revision of the database you are after, delta indicates
+the revision of the database you already have.
+
+In your items and your playlists, the 'revision' indicates the
+revision for the current item/playlist.  'valid' indicates whether it is
+valid.  True means that the item exists, False means that it has been removed.
+If the delta=xxx query string is present, items or playlists are sent
+satisfying item['revision'] <= delta.  Deleted items (valid=False)
+still need to support the 'revision' key and the 'valid' keys.  You may,
+at your option, choose to send redundant items, e.g. request to re-send a 
+deleted item that has already been deleted in a previous revision.
+
+When you make a change to a playlist or an item (e.g. adding an item to a
+playlist, change the title of an item, etc.), update the revision of the item
+or playlist and unblock the blocked thread in get_revision().  This indicates
+to the client something's changed.
+
+Important note: for item deletion to work within playlists using iTunes
+as a client, you must support dmap.itemcontainerid.  You can set it to be the
+same as dmap.itemid.
 
 Common errors:
 
@@ -149,3 +263,5 @@ stream from the reference daapd.py server.
 
 We think it's because the reference server does not send the song duration 
 data.  You'll need to implement a backend which supports this.
+
+
