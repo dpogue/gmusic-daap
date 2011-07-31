@@ -229,8 +229,8 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             pass
 
     def do_send_reply(self, rcode, reply, content_type=DEFAULT_CONTENT_TYPE,
-                      extra_headers=[]):
-        blob = encode_response(reply)
+                      content_encoding=None, extra_headers=[]):
+        blob = encode_response(reply, content_encoding=content_encoding)
         try:
             self.send_response(rcode)
             self.send_header('Content-type', content_type)
@@ -641,9 +641,48 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             rcode = DAAP_BADREQUEST
             reply = []
             extra_headers = []
-        self.do_send_reply(rcode, reply, extra_headers=extra_headers)
+        content_encoding = self.reply_encoding()
+        self.do_send_reply(rcode, reply, extra_headers=extra_headers,
+                           content_encoding=content_encoding)
         if endconn:
             self.wfile.close()
+
+    def reply_encoding(self):
+        supported = ['gzip']
+        acceptable = self.headers.getheader('Accept-encoding').split(',')
+        candidates = []
+        prohibited = []
+        for x in acceptable:
+            try:
+                encoding = x.split(',')
+                encoding, qvalue = x.split(',')
+                qvalue = float(qvalue)
+            except ValueError:
+                encoding = encoding[0]
+                qvalue = None
+            encoding = encoding.strip()
+            if qvalue == 0:
+                prohibited.append(encoding)
+            else:
+                candidates.append((encoding, qvalue))
+        def sort(x, y):
+           # NB: None > 0 == False, None < 0 == False
+           _, q1 = x
+           _, q2 = y
+           if x > y:
+               return 1
+           elif x < y:
+               return -1
+           else:
+               return 0
+        candidates.sort(cmp=sort, reverse=True)
+        for e, _ in candidates:
+            if e in supported:
+                return e
+        # XXX what to do if the 'identity' encoding or the wildcard was
+        # was administratively prohibited?  We can check for '*' in the
+        # prohibited list.
+        return None
 
 def mdns_init():
     return mdns.mdns_init()
