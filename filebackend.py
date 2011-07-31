@@ -38,6 +38,7 @@
 #
 
 import os
+import time
 from itertools import count
 import libdaap
 
@@ -49,6 +50,7 @@ class Backend(object):
         self.path = path
         self.audio_ext = audio_ext
         self.video_ext = video_ext
+        self.revision = 0
         self.items = dict()
         self.itempaths = dict()
         self.build_files()
@@ -62,6 +64,8 @@ class Backend(object):
                 item['dmap.itemid'] = c
                 item['dmap.itemname'] = nam
                 item['daap.songformat'] = ext[1:]
+                item['revision'] = 2
+                item['valid'] = True
                 media_kind = None
                 if ext in self.audio_ext:
                     media_kind = libdaap.DAAP_MEDIAKIND_AUDIO
@@ -72,6 +76,13 @@ class Backend(object):
                     self.items[c] = item
                     self.itempaths[c] = path
 
+    def get_revision(self, session, old_revision):
+        if not self.revision:
+            self.revision = old_revision + 1
+            return self.revision
+        while True:
+            time.sleep(3600)
+                
     def get_playlists(self):
         return dict()
 
