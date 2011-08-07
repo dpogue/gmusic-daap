@@ -106,14 +106,14 @@ def dump(host, kwargs):
     print 'session = ', client.session
     print 'db = ', client.db_id
     print 'dbname = ', client.db_name
-    playlists = client.playlists()
+    playlists, _ = client.playlists()
     if playlists is None:
        print "Error: can't get playlist"
        return
     for k in playlists.keys():
         for k_ in playlists[k].keys():
             print 'playlist prop %s = %s' % (k_, playlists[k][k_])
-        items = client.items(playlist_id=k)
+        items, _ = client.items(playlist_id=k)
         if items is None:
             print "Error: can't get item for playlist %d" % k
             continue
