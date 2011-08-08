@@ -50,7 +50,6 @@ class Backend(object):
         self.path = path
         self.audio_ext = audio_ext
         self.video_ext = video_ext
-        self.revision = 0
         self.items = dict()
         self.itempaths = dict()
         self.build_files()
@@ -77,9 +76,8 @@ class Backend(object):
                     self.itempaths[c] = path
 
     def get_revision(self, session, old_revision):
-        if not self.revision:
-            self.revision = old_revision + 1
-            return self.revision
+        if old_revision == 1:
+            return 2
         while True:
             time.sleep(3600)
                 
