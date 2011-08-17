@@ -110,18 +110,18 @@ def dump(host, kwargs):
     if playlists is None:
        print "Error: can't get playlist"
        return
-    for k in playlists.keys():
-        for k_ in playlists[k].keys():
-            print 'playlist prop %s = %s' % (k_, playlists[k][k_])
-        items, _ = client.items(playlist_id=k)
+    for p in playlists:
+        for prop in playlists[p]:
+            print 'playlist prop %s = %s' % (prop, playlists[p][prop])
+        items, _ = client.items(playlist_id=p)
         if items is None:
-            print "Error: can't get item for playlist %d" % k
+            print "Error: can't get item for playlist %d" % p
             continue
-        for k_ in items.keys():
-            for k__ in items[k_].keys():
-                value = items[k_][k__]
+        for i in items:
+            for prop in items[i].keys():
+                value = items[i][prop]
                 if value is not None:
-                    print '    %s = %s' % (k__, items[k_][k__])
+                    print '    %s = %s' % (prop, items[i][prop])
     client.disconnect()
 
 def main(argc, argv):
