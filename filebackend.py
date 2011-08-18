@@ -75,7 +75,7 @@ class Backend(object):
                     self.items[c] = item
                     self.itempaths[c] = path
 
-    def get_revision(self, session, old_revision):
+    def get_revision(self, session, old_revision, request):
         if old_revision == 1:
             return 2
         while True:

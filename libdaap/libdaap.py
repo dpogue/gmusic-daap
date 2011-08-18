@@ -43,7 +43,6 @@ import BaseHTTPServer
 import SocketServer
 import threading
 import httplib
-from httplib import _CS_IDLE, _CS_REQ_STARTED, _CS_REQ_SENT, _UNKNOWN
 import gzip
 try:
     from cStringIO import StringIO
@@ -98,7 +97,8 @@ DEFAULT_DAAP_META = ('dmap.itemkind,dmap.itemid,dmap.itemname,' +
                      'com.apple.itunes.series-name')
 DEFAULT_DAAP_PLAYLIST_META = ('dmap.itemid,dmap.itemname,dmap.persistentid,' +
                               'daap.baseplaylist,dmap.itemcount,' +
-                              'dmap.parentcontainerid,dmap.persistentid')
+                              'dmap.parentcontainerid,dmap.persistentid,' + 
+                              'com.apple.itunes.is-podcast-playlist')
 
 class SessionObject(object):
     # Container object for a daap session.  Basically a heartbeat timeout
@@ -359,7 +359,8 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return (DAAP_BADREQUEST, [], [])
         if not session:
             return (DAAP_FORBIDDEN, [], [])
-        revision = self.server.backend.get_revision(session, old_revision)
+        revision = self.server.backend.get_revision(session, old_revision,
+                                                    self.request)
         reply = []
         reply.append(('mupd', [('mstt', DAAP_OK), ('musr', revision)]))
         return (DAAP_OK, reply, [])
@@ -991,12 +992,10 @@ class DaapClient(object):
                              callback=self.handle_db)
             return self.db_id
         # We've been disconnected or there was a problem?
-        except (socket.error, IOError, ValueError):
+        except (AttributeError, socket.error, IOError, ValueError,
+                httplib.BadStatusLine):
             # Use of 'polite' flag: see description in connect().
             self.disconnect(polite=True)
-            return None
-        except httplib.BadStatusLine:
-            self.disconnect()
             return None
 
     def revision_query(self, update):
@@ -1022,7 +1021,8 @@ class DaapClient(object):
                               headers=self.headers)
             self.check_reply(self.conn.getresponse(),
                              callback=self.handle_update)
-        except (httplib.BadStatusLine, socket.error, IOError, ValueError):
+        except (AttributeError, httplib.BadStatusLine, socket.error,
+                IOError, ValueError):
             self.disconnect()
             return None
 
@@ -1040,10 +1040,8 @@ class DaapClient(object):
             del self.daap_playlists
             return playlists
         # We've been disconnected or there was a problem?
-        except (socket.error, IOError, ValueError):
-            self.disconnect()
-            return None
-        except httplib.BadStatusLine:
+        except (AttributeError, socket.error, IOError, ValueError,
+                httplib.BadStatusLine):
             self.disconnect()
             return None
 
@@ -1069,23 +1067,17 @@ class DaapClient(object):
             del self.daap_items
             return items
         # We've been disconnected or there was a problem?
-        except (socket.error, IOError, ValueError):
-            typ, value, tb = sys.exc_info()
-            print 'items: typ = %s value = %s' % (str(typ), str(value))
-            for line in traceback.format_tb(tb):
-                print line
-            self.disconnect()
-            return None
-        except httplib.BadStatusLine:
+        except (AttributeError, socket.error, IOError, ValueError,
+                httplib.BadStatusLine):
             self.disconnect()
             return None
 
     def disconnect(self, polite=False):
         try:
             self.timer.cancel()
-            # Don't use 'polite' unless absolutely necessary - you are just     
+            # Don't use 'polite' unless absolutely necessary - you are just 
             # making life difficult for yourself to nuke the existing
-            # connection.  Usually, we would use in connect() when the login    
+            # connection.  Usually, we would use in connect() when the login
             # fails, including when we cannot deal with a newer version of
             # iTunes, in which case the login is okay but database fetch
             # fails.  iTunes deals badly otherwise, thinking we are still 
