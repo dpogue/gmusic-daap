@@ -67,7 +67,7 @@ def inet_ntop(af, ip):
         if af == socket.AF_INET6:
             return ':'.join('%x' % bit for bit in struct.unpack('!' + 'H' * 8,
                                                                 ip))
-        raise ValueError('unkonwn address family %d' % af)
+        raise ValueError('unknown address family %d' % af)
 
 def mdns_browse_callback(added, fullname, hosttarget, port):
     print 'mdns_browse: '
