@@ -40,7 +40,8 @@ import getopt
 import select
 
 # Hardcoded example backend
-import filebackend
+#import filebackend
+import googlebackend
 import libdaap
 
 VERSION = '0.1'
@@ -50,7 +51,7 @@ def version(prognam):
     sys.exit(1)
 
 def usage(prognam):
-    print 'usage: %s [-dMvh] [[-c maxconn] [-p port] path]' % prognam
+    print 'usage: %s [-dMvh] [-c maxconn] [-p port] token' % prognam
     sys.exit(1)
 
 def mdns_register_callback(name):
@@ -88,7 +89,7 @@ def main(argc, argv):
             usage(prognam)
 
         # XXX hardcoded module for ready-to-eat server.
-        backend = filebackend.Backend(args[0])
+        backend = googlebackend.Backend(args[0])
         if debug:
             print 'info: debug on'
         server = libdaap.make_daap_server(backend, debug=debug, **kwargs)
