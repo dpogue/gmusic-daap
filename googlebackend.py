@@ -209,8 +209,9 @@ class Backend(object):
             i += 1
 
     def get_revision(self, session, old_revision, request):
-        if old_revision == 1:
-            return 2
+        return 2
+        #if old_revision == 1:
+        #    return 2
         while True:
             time.sleep(3600)
 

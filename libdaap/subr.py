@@ -62,14 +62,14 @@ class StreamObj(object):
     """
     def __init__(self, data, content_encoding=None):
         self.content_encoding = content_encoding
-        if content_encoding == 'gzip':
-            gzdata = StringIO()
-            f = gzip.GzipFile(fileobj=gzdata, mode='wb')
-            f.write(data)
-            f.close()
-            self.data = gzdata.getvalue()
-        else:
-            self.data = data
+        #if content_encoding == 'gzip':
+        #    gzdata = StringIO()
+        #    f = gzip.GzipFile(fileobj=gzdata, mode='wb')
+        #    f.write(data)
+        #    f.close()
+        #    self.data = gzdata.getvalue()
+        #else:
+        self.data = data
 
     def __str__(self):
         return self.data
@@ -83,8 +83,8 @@ class StreamObj(object):
 
     def get_headers(self):
         headers = []
-        if self.content_encoding:
-            headers.append(('Content-encoding', self.content_encoding))
+        #if self.content_encoding:
+        #    headers.append(('Content-encoding', self.content_encoding))
         return headers
 
     def get_rangetext(self):
