@@ -51,7 +51,7 @@ def version(prognam):
     sys.exit(1)
 
 def usage(prognam):
-    print 'usage: %s [-dMvh] [-c maxconn] [-p port] token' % prognam
+    print 'usage: %s [-dMvh] [-c maxconn] [-p port] [token]' % prognam
     sys.exit(1)
 
 def mdns_register_callback(name):
@@ -85,11 +85,13 @@ def main(argc, argv):
             if o == '-h':
                 usage(prognam)
                 # NOTREACHED
-        if len(args) != 1:
-            usage(prognam)
+        if len(args) <= 1:
+            token = None
+        else:
+            token = args[0]
 
         # XXX hardcoded module for ready-to-eat server.
-        backend = googlebackend.Backend(args[0])
+        backend = googlebackend.Backend(token)
         if debug:
             print 'info: debug on'
         server = libdaap.make_daap_server(backend, debug=debug, **kwargs)

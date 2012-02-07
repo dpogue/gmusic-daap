@@ -149,16 +149,19 @@ class GMusic:
             raise MusicException("Unsupported object type %s" % jsobj['kind'])
 
     def do_auth(self):
-        self.auth_token = self.config['Auth'].get('Token', None)
+        if self.config.has_option('Auth', 'Token'):
+            self.auth_token = self.config.get('Auth', 'Token', None)
         if self.auth_token is None:
             print('Please enter your Google username:')
-            user = input()
+            user = raw_input()
             print('Please enter your password:')
-            passwd = input()
+            passwd = raw_input()
 
             loginclient = ClientLogin(user, passwd, 'sj')
             self.auth_token = loginclient.get_auth_token(True)
-            self.config['Auth']['Token'] = self.auth_token
+            if not self.config.has_section('Auth'):
+                self.config.add_section('Auth')
+            self.config.set('Auth', 'Token', self.auth_token)
             with open('config.ini', 'w') as f:
                 self.config.write(f)
 

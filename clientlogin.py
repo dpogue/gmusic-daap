@@ -44,7 +44,7 @@ class ClientLogin:
             return err, e.read()
         resp = resp_obj.read()
         resp_obj.close()
-        return None, str(resp, encoding='utf8')
+        return None, unicode(resp, encoding='utf8')
 
     def request_auth_token(self):
         data = {
@@ -81,9 +81,9 @@ class ClientLogin:
 
 if __name__ == '__main__':
     print('Please enter your Google username:')
-    user = input()
+    user = raw_input()
     print('Please enter your password:')
-    passwd = input()
+    passwd = raw_input()
 
     client = ClientLogin(user, passwd, 'sj')
     print('Your auth token is: %s' % client.request_auth_token())
