@@ -1,11 +1,17 @@
-This is pydaap, the Python-based daap library.
+This is a fork of pydaap, the Python-based daap library.
 
-Why this?  There doesn't seem to exist a standalone daap library that can
-be used in a cross-platform fashion for the use-case that Miro is anticipating.
+This aims to be a wrapper to expose a user's Google Music library as a DAAP
+share on the network.
+
+Why was pydaap written?  There doesn't seem to exist a standalone daap library
+that can be used in a cross-platform fashion for the use-case that Miro is
+anticipating.
 
 We do however borrow heavily from existing projects, in trying to write this
 we hope that there is a decoupling of the protocol implementation and an
 embedding application so this can be used elsewhere.
+
+Many thanks to Geoffrey Lee for writing pydaap!
 
 To build and install:
 
@@ -21,7 +27,7 @@ need to install libdaap on your system.
 
 To run the server:
 
-python daapd.py /path/to/share
+python daapd.py [GMusic ClientLogin token]
 
 Optional options for server:
 
