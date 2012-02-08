@@ -54,6 +54,9 @@ class Backend(object):
         self.itempaths = dict()
         self.build_files()
 
+    def get_name(self):
+        return os.path.basename(os.path.normpath(self.path))
+
     def build_files(self):
         for c, entry in zip(count(1), os.listdir(self.path)):
             nam, ext = os.path.splitext(entry)

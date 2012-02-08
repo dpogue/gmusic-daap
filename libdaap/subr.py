@@ -304,18 +304,21 @@ def encode_response(reply, content_encoding=None):
                 size = len(subblob)
                 value = ''
             if typ == DMAP_TYPE_STRING:
+                value = value.encode('utf-8', 'replace')
                 fmt = str(len(value)) + fmt
                 size = len(value)
                 # This ensures we always get a string type even if we are lame
                 # and passed a unicode in.
-                value = value.encode('ascii', 'replace')
+                #value = value.encode('utf-8', 'replace')
+
             # code (4 bytes), length (4 bytes), data (variable), network byte
             # order
             fmt = '!4sI' + fmt
             # XXX slow - should bunch up
             try:
                 blob += struct.pack(fmt, code, size, value)
-            except struct.error:
+            except struct.error as e:
+                print e
                 # This pack did not work.  Let's ignore it
                 pass
             blob += subblob

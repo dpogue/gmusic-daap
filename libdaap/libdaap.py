@@ -172,7 +172,6 @@ class DaapTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         return s
 
     def renew_session(self, s):
-        print 'renewing with session %d' % s
         with self.session_lock:
             try:
                 self.activeconn[s].timer.cancel()
@@ -217,19 +216,19 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.server.log_message_callback(format, *args)
 
     def finish(self):
-        try:
-            self.server.del_session(self.session)
-            if self.server.finished_callback:
-                self.server.finished_callback(self.session)
-            self.log_message('finish called on session %d.  Bye ...',
-                             self.session)
-        except AttributeError:
-            pass
         # XXX Lousy python module.
         # super(DaapHttpRequestHandler, self).finish()
         try:
             BaseHTTPServer.BaseHTTPRequestHandler.finish(self)
         except IOError:
+            try:
+                self.server.del_session(self.session)
+                if self.server.finished_callback:
+                    self.server.finished_callback(self.session)
+                self.log_message('finish called on session %d.  Bye ...',
+                                 self.session)
+            except AttributeError:
+                pass
             # Silence broken pipe error.
             pass
 
@@ -269,21 +268,18 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             try:
                 session = int(query['session-id'])
                 if not self.server.renew_session(session):
-                    print 'Could not renew session'
                     session = 0
             except ValueError:
                 pass
-        print '\tsession=%d' % session
         return session
 
     def do_server_info(self):
-        print 'do_server_info'
         reply = []
         # Append standard codes
         reply.append(('mstt', DAAP_OK))   # OK
         reply.append(('mpro', DMAP_VERSION))
         reply.append(('apro', DAAP_VERSION))
-        reply.append(('minm', self.server_version))    # XXX FIXME
+        reply.append(('minm', self.server.backend.get_name()))
         reply.append(('mstm', DAAP_TIMEOUT))
 
         not_supported = [
@@ -330,7 +326,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # send a 401 if there's no password and the client will re-issue the
     # /login.
     def do_login(self):
-        print 'do_login'
         # XXX If we are full, what does the server return?
         session = self.server.new_session()
         if not session:
@@ -355,7 +350,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.del_session(session)
 
     def do_update(self):
-        print 'do_update'
         path, query = split_url_path(self.path)
         session = self.get_session()
         old_revision, old_delta = self.get_revision(query)
@@ -407,7 +401,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 (address, port, itemid, enclosure, self.get_session()))
 
     def do_databases(self):
-        print 'do_databases'
         path, query = split_url_path(self.path)
         session = self.get_session()
         if not session:
@@ -545,7 +538,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     # type=xxx - not parsed yet.  I don't think it's actually used (?)
     # try to invoke any of this the server will go BOH BOH!!!! no support!!!
     def do_itemlist(self, path, query, playlist_id=None):
-        print 'do_itemlist'
         # Library playlist?
         # Save this variable, we use it to determine which code to send later
         # on.  playlist_id is Library default so it if asks for that as a 
@@ -560,7 +552,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             meta = query['meta']
         except KeyError:
             meta = DEFAULT_DAAP_META
-        print meta
         revision, delta = self.get_revision(query) 
         meta_list = [m.strip() for m in meta.split(',')]
         # NB: mikd must be the first guy in the listing.
@@ -585,13 +576,13 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                                       # item kind - seems OK to hardcode this.
                                           ('mikd', DAAP_ITEMKIND_AUDIO),
                                          ] + item
-                           )) 
+                           ))
             else:
                 deleted.append(('miid', k))
 
         tag = 'apso' if playlist_id else 'adbs'
         nfiles = len(itemlist)
-        update = 0 #1 if delta else 0
+        update = 1 if delta else 0
         reply = []
         content = [                          # Container type
                         ('mstt', DAAP_OK),   # Status: OK
@@ -607,7 +598,6 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return (DAAP_OK, reply, [])
 
     def do_database_items(self, path, query):
-        print 'do_database_items'
         db_id = int(path[1])
         if not self._check_db_id(db_id):
             return (DAAP_FORBIDDEN, [], [])
@@ -657,7 +647,7 @@ class DaapHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     self.path = '?'.join([result.path, result.query])
                 else:
                     self.path = result.path
-            print 'GET %s' % self.path
+            #print 'GET %s' % self.path
             if self.path == '/server-info':
                 rcode, reply, extra_headers = self.do_server_info()
             elif self.path == '/content-codes':

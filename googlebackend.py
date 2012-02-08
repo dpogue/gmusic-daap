@@ -75,11 +75,11 @@ class GTrack:
         self.artist = data['artist']
         self.album = data['album']
         self.albumArtist = data['albumArtist']
-        self.year = data['year']
-        self.rating = data['rating']
-        self.trackNumber = data['trackNumber']
-        self.discNumber = data['discNumber']
-        self.durationMillis = data['durationMillis']
+        self.year = int(data['year'])
+        self.rating = int(data['rating'])
+        self.trackNumber = int(data['trackNumber'])
+        self.discNumber = int(data['discNumber'])
+        self.durationMillis = int(data['durationMillis'])
 
         self.client.tracks.append(self)
 
@@ -188,18 +188,24 @@ class Backend(object):
         self.itemuuids = dict()
         self.build_files()
 
+    def get_name(self):
+        return 'Google Music'
+
     def build_files(self):
         i = 0
         for t in self.client.get_tracks():
             item = dict()
             item['dmap.itemid'] = i
-            item['dmap.containeritemid'] = i
             item['dmap.itemname'] = t.title
-            item['dmap.itemkind'] = 2
+            item['dmap.persistentid'] = i
             item['daap.songalbum'] = t.album
             item['daap.songartist'] = t.artist
-            item['daap.songtime'] = t.durationMillis
+            item['daap.songdiscnumber'] = t.discNumber
             item['daap.songformat'] = 'mp3'
+            item['daap.songtime'] = t.durationMillis
+            item['daap.songtracknumber'] = t.trackNumber
+            item['daap.songuserrating'] = t.rating
+            item['daap.songyear'] = t.year
             item['valid'] = True
             item['revision'] = 2
             item['com.apple.itunes.mediakind'] = 1
