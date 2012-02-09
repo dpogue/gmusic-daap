@@ -190,18 +190,19 @@ class GMusic:
             raise MusicException("Unsupported object type %s" % jsobj['kind'])
 
     def do_auth(self):
+        if not self.config.has_section('Auth'):
+            self.config.add_section('Auth')
         if self.config.has_option('Auth', 'Token'):
             self.auth_token = self.config.get('Auth', 'Token', None)
         if self.auth_token is None:
             print('Please enter your Google username:')
             user = raw_input()
+            self.config.set('Auth', 'Username', user)
             print('Please enter your password:')
             passwd = raw_input()
 
             loginclient = ClientLogin(user, passwd, 'sj')
             self.auth_token = loginclient.get_auth_token(True)
-            if not self.config.has_section('Auth'):
-                self.config.add_section('Auth')
             self.config.set('Auth', 'Token', self.auth_token)
             with open('config.ini', 'w') as f:
                 self.config.write(f)
@@ -230,7 +231,11 @@ class Backend(object):
         self.build_files()
 
     def get_name(self):
-        return 'Google Music'
+        try:
+            username = self.client.config.get('Auth', 'Username')
+            return "%s's Google Music" % username
+        except:
+            return 'Google Music'
 
     def build_files(self):
         i = 0
@@ -247,7 +252,7 @@ class Backend(object):
             item['daap.songtracknumber'] = t.trackNumber
             item['daap.songuserrating'] = t.rating
             item['daap.songyear'] = t.year
-            item['valid'] = True
+            item['valid'] = not t.deleted
             item['revision'] = 2
             item['com.apple.itunes.mediakind'] = 1
 
