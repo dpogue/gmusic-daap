@@ -70,16 +70,57 @@ class MusicURL:
 class GTrack:
     def __init__(self, client, data):
         self.client = client
-        self.uuid = data['id']
-        self.title = data['title']
-        self.artist = data['artist']
-        self.album = data['album']
-        self.albumArtist = data['albumArtist']
-        self.year = int(data['year'])
-        self.rating = int(data['rating'])
-        self.trackNumber = int(data['trackNumber'])
-        self.discNumber = int(data['discNumber'])
-        self.durationMillis = int(data['durationMillis'])
+
+        self.uuid = data['id'] #if this isn't set, we should fail
+        self.title = 'Untitled'
+        self.artist = 'Unknown Artist'
+        self.composer = ''
+        self.album = 'Unknown Album'
+        self.albumArtist = 'Unknown Album Artist'
+        self.year = 0
+        self.comment = ''
+        self.trackNumber = 0
+        self.genre = ''
+        self.beatsPerMinute = 0
+        self.durationMillis = 0
+        self.totalTrackCount = 0
+        self.discNumber = 0
+        self.totalDiscCount = 0
+        self.rating = 0
+        self.deleted = False
+
+        if 'title' in data:
+            self.title = data['title']
+        if 'artist' in data:
+            self.artist = data['artist']
+        if 'composer' in data:
+            self.composer = data['composer']
+        if 'album' in data:
+            self.album = data['album']
+        if 'albumArtist' in data:
+            self.albumArtist = data['albumArtist']
+        if 'year' in data:
+            self.year = int(data['year'])
+        if 'comment' in data:
+            self.comment = data['comment']
+        if 'trackNumber' in data:
+            self.trackNumber = int(data['trackNumber'])
+        if 'genre' in data:
+            self.genre = data['genre']
+        if 'beatsPerMinute' in data:
+            self.beatsPerMinute = int(data['beatsPerMinute'])
+        if 'durationMillis' in data:
+            self.durationMillis = int(data['durationMillis'])
+        if 'totalTrackCount' in data:
+            self.trackCount = int(data['totalTrackCount'])
+        if 'discNumber' in data:
+            self.discNumber = int(data['discNumber'])
+        if 'totalDiscCount' in data:
+            self.discCount = int(data['totalDiscCount'])
+        if 'rating' in data:
+            self.rating = int(data['rating'])
+        if 'deleted' in data:
+            self.deleted = bool(data['deleted'])
 
         self.client.tracks.append(self)
 
