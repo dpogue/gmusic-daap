@@ -94,4 +94,5 @@ class Backend(object):
                  offset=0, chunk=None):
         file_obj = open(self.itempaths[itemid], 'rb')
         file_obj.seek(offset, os.SEEK_SET)
-        return file_obj, self.itempaths[itemid]
+        fsize = os.fstat(file_obj.fileno())[stat.ST_SIZE]
+        return file_obj, fsize, self.itempaths[itemid]

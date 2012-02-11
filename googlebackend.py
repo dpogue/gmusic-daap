@@ -61,11 +61,20 @@ class MusicURL:
     def tracks():
         return MusicURL.BASE_URL+'tracks'
 
+    @staticmethod
     def playlists():
         return MusicURL.BASE_URL+'playlists'
 
+    @staticmethod
     def play(songid):
-        return 'https://android.clients.google.com/music/mplay?songid=%s&targetkbps=128&pt=e' % songid
+        return 'https://music.google.com/music/play?songid=%s&targetkbps=256&pt=e' % songid
+
+        # Android client uses this, but it requires X-Device-ID header
+        #return 'https://android.clients.google.com/music/mplay?songid=%s&targetkbps=128&pt=e' % songid
+
+    @staticmethod
+    def auth():
+        return 'https://music.google.com/music/listen?u=0'
 
 class GTrack:
     def __init__(self, client, data):
@@ -135,6 +144,7 @@ class GMusic:
         self.config = ConfigParser.ConfigParser()
         self.config.read('config.ini')
         self.auth_token = None
+        self.auth_cookie = None
 
         self.tracks = []
 
@@ -161,10 +171,11 @@ class GMusic:
         resp_obj.close()
         return None, unicode(resp, encoding='utf8')
 
-    def _make_audio_request(self, url, headers={}):
+    def _make_track_request(self, url, headers={}):
         if not 'Content-Type' in headers:
             headers['Content-Type'] = 'application/json'
         headers['Authorization'] = 'GoogleLogin auth=%s' % self.auth_token
+        headers['Cookie'] = 'sjsaid=%s' % self.auth_cookie
 
         req = Request(url, None, headers)
         err = None
@@ -176,7 +187,23 @@ class GMusic:
             return err, e.read()
         resp = resp_obj.read()
         resp_obj.close()
-        return None, resp
+        return None, unicode(resp, encoding='utf8')
+
+    def _make_audio_request(self, url):
+        headers = {}
+        headers['Context-Type'] = 'audio/mp3'
+        headers['Authorization'] = 'GoogleLogin auth=%s' % self.auth_token
+        headers['Cookie'] = 'sjsaid=%s' % self.auth_cookie
+
+        req = Request(url, None, headers)
+        err = None
+
+        try:
+            resp_obj = urlopen(req)
+        except HTTPError as e:
+            err = e.code
+            return err, e.read()
+        return None, resp_obj
 
     def parse_item(self, jsobj):
         if 'kind' not in jsobj:
@@ -207,18 +234,55 @@ class GMusic:
             with open('config.ini', 'w') as f:
                 self.config.write(f)
 
+    def get_cookie(self):
+        headers = {}
+        headers['Authorization'] = 'GoogleLogin auth=%s' % self.auth_token
+
+        req = Request(MusicURL.auth(), None, headers)
+        err = None
+
+        # Normally we'd want to catch this, but at this point if it doesn't
+        # work then we pretty much need to die
+        resp_obj = urlopen(req)
+        info = resp_obj.info()
+
+        cookies = dict(s.split(';', 1)[0].split('=', 1) for s in info.getheaders('Set-Cookie'))
+        if 'sjsaid' not in cookies:
+            raise MusicException("Didn't receive authentication cookie")
+        self.auth_cookie = cookies['sjsaid']
+
     def get_tracks(self):
         if self.auth_token is None:
             self.do_auth()
+        if self.auth_cookie is None:
+            self.get_cookie()
 
         err, resp = self._make_request(MusicURL.tracks())
         if not err is None:
+            print 'Error Code %d' % err
             raise MusicException("Error Code %d" % err)
 
         jsdata = json.loads(resp)
         self.parse_item(jsdata)
 
         return self.tracks
+
+    def get_audio_track(self, uuid):
+        url = MusicURL.play(uuid)
+
+        err, resp = self._make_track_request(url)
+        if not err is None:
+            print 'Error Code %d' % err
+            raise MusicException("Error Code %d" % err)
+
+        jsdata = json.loads(resp)
+        err, resp = self._make_audio_request(jsdata['url'])
+        if not err is None:
+            print 'Error Code %d' % err
+            raise MusicException("Error Code %d" % err)
+
+        length = resp.info().getheaders('Content-Length')
+        return resp, int(length[0])
 
 
 class Backend(object):
@@ -275,7 +339,8 @@ class Backend(object):
 
     def get_file(self, itemid, generation, ext, session, request_path_func,
                  offset=0, chunk=None):
-        file_obj = open(self.itemuuids[itemid], 'rb')
-        file_obj.seek(offset, os.SEEK_SET)
-        return file_obj, self.itemuuids[itemid]
+        uuid = self.itemuuids[itemid]
+        audio_fd, length = self.client.get_audio_track(uuid)
+
+        return audio_fd, length, None
 
